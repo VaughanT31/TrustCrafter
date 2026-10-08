@@ -21,4 +21,7 @@ Data\Ledger.lua
 UI\Skin.lua
 UI\Tooltip.lua
 UI\HistoryWindow.lua
+UI\ExportWindow.lua
+UI\OrderScreen.lua
+UI\PlayerMenu.lua
 UI\MinimapButton.lua

@@ -31,7 +31,16 @@ Crafting orders are full of crafters you know nothing about. TrustCrafter keeps 
 TrustCrafter: crafted 4x for you  |  4/4 met or exceeded  |  avg 38 min
 ```
 
-**History window** (`/tc`): every order on this realm, sortable by date, crafter, item, outcome, time taken or tip, with search and outcome and profession filters.
+You also see it:
+
+- **On the crafting orders window:** type a crafter's name for a personal order and your history with them shows beside the name. In My Orders, a tick marks crafters you have used before (yellow if any order came in below what you asked for), and hovering the order adds your history to its tooltip.
+- **In the right-click menu** on a player's name in chat, the friends list, your guild or a unit frame. Click it to open your history with that crafter.
+
+**History window** (`/tc` or the minimap button): every order on this realm, sortable by date, crafter, item, outcome, time taken or tip, with search and outcome and profession filters.
+
+**Export:** `/tc export` (or Export in the history window) gives you every order as CSV to paste into a spreadsheet.
+
+Personal orders count the same as public and guild ones. The order type is kept with each order, so you can always see which it was.
 
 Everything is kept per realm, because public crafting orders only reach crafters on your own realm.
 
@@ -53,6 +62,7 @@ Orders you placed before installing TrustCrafter are added too, for as long as t
 | `/tc` | Open or close your order history (or click the minimap button) |
 | `/tc minimap` | Hide or show the minimap button |
 | `/tc lookup Name` | What you know about a crafter |
+| `/tc export` | Copy your orders as CSV for a spreadsheet |
 | `/tc tooltip` | Turn the tooltip line on or off |
 | `/tc wipe` | Delete your history on this realm (asks first) |
 | `/tc debug` | Log crafting order events to chat, for bug reports |

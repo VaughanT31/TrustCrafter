@@ -126,6 +126,56 @@ function Ledger:Summary(crafter)
     return s
 end
 
+-- ---------------------------------------------------------------------
+-- Export: every order on this realm as CSV, oldest first, for a
+-- spreadsheet. Includes private notes: it's your own copy of your data.
+-- ---------------------------------------------------------------------
+
+local CSV_COLUMNS = {
+    "order_id", "placed", "filled_or_closed", "times_approximate", "customer", "crafter", "item_id", "item",
+    "order_type", "profession", "quality_asked", "quality_got", "outcome", "took_minutes", "tip_gold",
+    "tags", "note", "private",
+}
+
+local function Csv(value)
+    if value == nil then return "" end
+    value = tostring(value)
+    if value:find('[,"\n]') then value = '"' .. value:gsub('"', '""') .. '"' end
+    return value
+end
+
+local function IsoTime(timestamp)
+    return timestamp and date("%Y-%m-%d %H:%M", timestamp) or nil
+end
+
+function Ledger:ExportCSV()
+    local lines = { table.concat(CSV_COLUMNS, ",") }
+    local all = self:All()
+    for i = #all, 1, -1 do
+        local r = all[i]
+        local tags = {}
+        for _, tag in ipairs(self.TAGS) do
+            if r.tags and r.tags[tag] then tags[#tags + 1] = tag:lower() end
+        end
+        local took = Ledger.Turnaround(r)
+        local item = r.link and r.link:match("%[(.-)%]")
+            or (r.itemID and C_Item and C_Item.GetItemInfo and C_Item.GetItemInfo(r.itemID))
+        local row = {
+            r.id, IsoTime(r.placedAt), IsoTime(r.completedAt),
+            (r.placedApprox or r.completedApprox) and "yes" or "no",
+            r.customer, r.crafter, r.itemID, item, r.orderType, r.profession,
+            (r.minQuality or 0) > 0 and r.minQuality or nil, r.delivered, r.outcome or "OPEN",
+            took and math.floor(took / 60 + 0.5) or nil,
+            r.tip and string.format("%.2f", r.tip / 10000) or nil,
+            table.concat(tags, " "), r.note, r.private and "yes" or "no",
+        }
+        local cells = {}
+        for c = 1, #CSV_COLUMNS do cells[c] = Csv(row[c]) end
+        lines[#lines + 1] = table.concat(cells, ",")
+    end
+    return table.concat(lines, "\n"), #all
+end
+
 -- Seconds from placing to filling, or nil when either end isn't known.
 function Ledger.Turnaround(record)
     if record.placedAt and record.completedAt and record.state == "FILLED" then

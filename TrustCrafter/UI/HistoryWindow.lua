@@ -420,6 +420,7 @@ local function Create()
         self.placeholder:SetShown(self:GetText() == "")
         HistoryWindow:Refresh()
     end)
+    frame.search = search
     search:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
     search:SetScript("OnEscapePressed", function(self)
         self:SetText("")
@@ -444,6 +445,10 @@ local function Create()
         state.profession = list[nextIndex] -- past the end: back to all
         HistoryWindow:Refresh()
     end)
+
+    local export = Skin.Button(frame, L.EXPORT_BUTTON, 90, 24)
+    export:SetPoint("TOPRIGHT", -PAD, CONTROLS_Y)
+    export:SetScript("OnClick", function() ns.ExportWindow:Show() end)
 
     -- Column headers; sortable ones toggle direction on a second click.
     local headerRow = CreateFrame("Frame", nil, frame)
@@ -514,6 +519,17 @@ function HistoryWindow:Refresh()
     frame.content:SetHeight(math.max(1, #list * ROW_HEIGHT))
 
     RefreshDetail(frame.detail)
+end
+
+-- Opens the window searched to one crafter ("Name-Realm"), from the
+-- right-click player menu.
+function HistoryWindow:ShowCrafter(crafter)
+    if not ns.db then return end
+    if not frame then Create() end
+    state.outcome, state.profession = 1, nil
+    frame:Show()
+    frame.search:SetText(Util.ShortName(crafter))
+    self:Refresh()
 end
 
 function HistoryWindow:Toggle()

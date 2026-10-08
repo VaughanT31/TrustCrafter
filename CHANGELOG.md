@@ -11,6 +11,9 @@ First version: your own crafting order ledger.
 - **Outcome worked out from the facts:** Met, Exceeded or Below, plus Not filled for orders nobody took (never counted against anyone).
 - **Notes and tags** on your own orders: Fast, Friendly, Own mats, Would again, Slow. The facts can't be edited.
 - **Tooltip line** on players you have used as a crafter.
+- **On the crafting orders window:** your history beside the name when you send a personal order, and a tick on My Orders for crafters you have used before.
+- **Right-click menu** on player names (chat, friends, guild, unit frames) shows your history with that crafter and opens it in the history window.
+- **Export** your orders as CSV with `/tc export` or the Export button.
 - **History window** (`/tc`) with sorting, search, and outcome and profession filters.
 - **Minimap button** to open the history window; drag it to move, `/tc minimap` hides it.
 - `/tc lookup`, `/tc tooltip`, `/tc wipe` and `/tc debug`.
