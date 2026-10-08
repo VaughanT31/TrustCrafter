@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.0
+
+- **Online dot beside every crafter:** green when they are online, red when the game says they are offline, grey when it can't tell. Shown in the history window, the order details, the personal order name box, the My Orders tooltip and `/tc lookup`.
+- Uses the game's own whisper check plus your friends list, group and Battle.net friends. Nothing is sent to the crafter, and it pauses while chat is locked down in restricted content.
+- Dots refresh every 30 seconds while the history window is open.
+
 ## 1.0.0
 
 First version: your own crafting order ledger.

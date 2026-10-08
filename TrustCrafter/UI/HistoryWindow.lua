@@ -176,7 +176,9 @@ local function SetRow(row, record)
     row.record = record
     local c = row.cells
     c.date:SetText(Util.FormatDate(record.completedAt or record.placedAt))
-    c.crafter:SetText(record.crafter and Util.ShortName(record.crafter) or ("|cff999999" .. L.NO_CRAFTER .. "|r"))
+    c.crafter:SetText(record.crafter
+        and (ns.Presence:Dot(record.crafterGuid, record.crafter) .. " " .. Util.ShortName(record.crafter))
+        or ("|cff999999" .. L.NO_CRAFTER .. "|r"))
     c.item:SetText(ItemName(record) or ("|cff999999" .. L.ITEM_LOADING .. "|r"))
     row.icon:SetTexture(record.itemID and C_Item and C_Item.GetItemIconByID and C_Item.GetItemIconByID(record.itemID) or 134400)
     c.asked:SetText((record.minQuality or 0) > 0 and Util.QualityText(record.minQuality) or "|cff999999-|r")
@@ -317,7 +319,9 @@ local function FactLines(record)
     local lines = {}
     local function Add(label, value) lines[#lines + 1] = "|cff999999" .. label .. "|r  " .. value end
 
-    Add(L.FACT_CRAFTER, record.crafter or L.NO_CRAFTER)
+    Add(L.FACT_CRAFTER, record.crafter
+        and (record.crafter .. "   " .. ns.Presence:Label(record.crafterGuid, record.crafter))
+        or L.NO_CRAFTER)
     if record.customer then Add(L.FACT_CUSTOMER, Util.ShortName(record.customer)) end
     Add(L.FACT_TYPE, L["TYPE_" .. (record.orderType or "PUBLIC")] or record.orderType or "-")
     local asked = (record.minQuality or 0) > 0 and Util.QualityText(record.minQuality) or L.FACT_NO_MINIMUM
@@ -493,7 +497,19 @@ local function Create()
     frame.empty:SetSpacing(4)
 
     frame.detail = BuildDetail(frame)
-    frame:HookScript("OnShow", function() HistoryWindow:Refresh() end)
+    frame:HookScript("OnShow", function()
+        HistoryWindow:Refresh()
+        -- Keeps the online dots current while the window is open.
+        if not frame.presenceTicker then
+            frame.presenceTicker = C_Timer.NewTicker(30, function() HistoryWindow:Refresh() end)
+        end
+    end)
+    frame:HookScript("OnHide", function()
+        if frame.presenceTicker then
+            frame.presenceTicker:Cancel()
+            frame.presenceTicker = nil
+        end
+    end)
 end
 
 function HistoryWindow:Refresh()
@@ -539,6 +555,7 @@ function HistoryWindow:Toggle()
 end
 
 ns.Events:On("TC_LEDGER_CHANGED", function() HistoryWindow:Refresh() end)
+ns.Events:On("TC_PRESENCE_CHANGED", function() HistoryWindow:Refresh() end)
 
 -- Item names arrive from the server a moment after they're first asked for.
 local namesTimer

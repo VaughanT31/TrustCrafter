@@ -207,5 +207,5 @@ ns:RegisterCommand("lookup", function(args)
         Util.Print(L.LOOKUP_NONE:format(args))
         return
     end
-    Util.Print(ns.Tooltip.SummaryLine(Util.ShortName(crafter), s))
+    Util.Print(ns.Presence:ForCrafter(crafter) .. " " .. ns.Tooltip.SummaryLine(Util.ShortName(crafter), s))
 end, ns.L.HELP_LOOKUP)

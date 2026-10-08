@@ -15,6 +15,7 @@ local BADGE_GOOD = "Interface\\RaidFrame\\ReadyCheck-Ready"
 local BADGE_MIXED = "Interface\\RaidFrame\\ReadyCheck-Waiting"
 
 local hooked = false
+local recipientBox, UpdateRecipient
 
 local function SummaryFor(name)
     if not name or name == "" or (issecretvalue and issecretvalue(name)) then return nil, nil end
@@ -33,11 +34,14 @@ local function HookRecipient(form)
     text:SetWidth(280)
     text:SetJustifyH("LEFT")
     text:SetWordWrap(false)
-    box:HookScript("OnTextChanged", function(self)
+    UpdateRecipient = function()
         if not ns.db then return end
-        local s = SummaryFor(self:GetText())
-        text:SetText(s and ("|cff66ccffTrustCrafter:|r " .. ns.Tooltip.SummaryLine(nil, s)) or "")
-    end)
+        local s, crafter = SummaryFor(box:GetText())
+        text:SetText(s and ("|cff66ccffTrustCrafter:|r " .. ns.Presence:ForCrafter(crafter) .. " "
+            .. ns.Tooltip.SummaryLine(nil, s)) or "")
+    end
+    recipientBox = box
+    box:HookScript("OnTextChanged", UpdateRecipient)
 end
 
 -- My Orders rows ----------------------------------------------------------
@@ -70,8 +74,10 @@ local function OnRowEnter(row)
     if not s then return end
     if not GameTooltip:IsOwned(row) then GameTooltip:SetOwner(row, "ANCHOR_RIGHT") end
     GameTooltip:AddLine(" ")
-    GameTooltip:AddLine("|cff66ccffTrustCrafter:|r " .. Util.ShortName(Util.FullName(order.crafterName))
+    local crafter = Util.FullName(order.crafterName)
+    GameTooltip:AddLine("|cff66ccffTrustCrafter:|r " .. Util.ShortName(crafter)
         .. ": " .. ns.Tooltip.SummaryLine(nil, s), 1, 1, 1, true)
+    GameTooltip:AddLine(ns.Presence:Label(order.crafterGuid or ns.Presence:GuidFor(crafter), crafter), 1, 1, 1)
     GameTooltip:Show()
 end
 
@@ -96,6 +102,10 @@ end
 
 ns.Events:On("ADDON_LOADED", function(_, name)
     if name == BLIZZARD_ADDON then Hook() end
+end)
+
+ns.Events:On("TC_PRESENCE_CHANGED", function()
+    if recipientBox and recipientBox:IsVisible() then UpdateRecipient() end
 end)
 
 ns.Events:On("TC_LOGIN", function()

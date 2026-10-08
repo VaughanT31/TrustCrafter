@@ -36,6 +36,8 @@ You also see it:
 - **On the crafting orders window:** type a crafter's name for a personal order and your history with them shows beside the name. In My Orders, a tick marks crafters you have used before (yellow if any order came in below what you asked for), and hovering the order adds your history to its tooltip.
 - **In the right-click menu** on a player's name in chat, the friends list, your guild or a unit frame. Click it to open your history with that crafter.
 
+**Is the crafter online?** A dot beside each crafter: green when they are online, red when the game says they are offline, grey when it can't tell (for example a player on another realm it can't reach). It uses the game's own whisper check plus your friends list and group, and sends nothing to the crafter.
+
 **History window** (`/tc` or the minimap button): every order on this realm, sortable by date, crafter, item, outcome, time taken or tip, with search and outcome and profession filters.
 
 **Export:** `/tc export` (or Export in the history window) gives you every order as CSV to paste into a spreadsheet.
