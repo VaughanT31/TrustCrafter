@@ -2,7 +2,7 @@
 ## Title: TrustCrafter
 ## Notes: Remembers who crafted your orders, what you asked for and what you got.
 ## Author: CtrlShift_Zed
-## Version: 0.1.0
+## Version: 1.0.0
 ## Category: CtrlShift_Zed
 ## SavedVariables: TrustCrafterDB
 ## IconTexture: Interface\AddOns\TrustCrafter\icon
