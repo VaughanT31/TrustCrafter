@@ -1,0 +1,23 @@
+## Interface: 120100
+## Title: TrustCrafter
+## Notes: Remembers who crafted your orders, what you asked for and what you got.
+## Author: CtrlShift_Zed
+## Version: 0.1.0
+## Category: CtrlShift_Zed
+## SavedVariables: TrustCrafterDB
+## IconTexture: Interface\AddOns\TrustCrafter\icon
+## AddonCompartmentFunc: TrustCrafter_OnAddonCompartmentClick
+## X-License: MIT
+
+Locales\enUS.lua
+
+Core\Util.lua
+Core\Events.lua
+Core\Init.lua
+
+Data\Orders.lua
+Data\Ledger.lua
+
+UI\Skin.lua
+UI\Tooltip.lua
+UI\HistoryWindow.lua

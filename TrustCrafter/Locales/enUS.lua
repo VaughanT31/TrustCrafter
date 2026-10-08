@@ -1,0 +1,102 @@
+-- TrustCrafter - every player-facing sentence. Other languages can copy
+-- this file and translate the right-hand side.
+
+local _, ns = ...
+local L = {}
+ns.L = L
+
+-- Durations
+L.DURATION_MIN = "%d min"
+L.DURATION_H = "%d h"
+L.DURATION_H_MIN = "%d h %d min"
+L.DURATION_D = "%d d"
+L.DURATION_D_H = "%d d %d h"
+
+-- Commands
+L.HELP_HEADER = "Commands:"
+L.HELP_TOGGLE = "/tc - open or close your crafting order history"
+L.HELP_LOOKUP = "/tc lookup Name - what you know about a crafter"
+L.HELP_TOOLTIP = "/tc tooltip - turn the tooltip line on or off"
+L.HELP_WIPE = "/tc wipe - delete your history on this realm"
+L.HELP_DEBUG = "/tc debug - log crafting order events to chat (for bug reports)"
+L.UNKNOWN_COMMAND = "Unknown command \"%s\"."
+L.TOOLTIP_ON = "Tooltip line on."
+L.TOOLTIP_OFF = "Tooltip line off."
+L.DEBUG_ON = "Debug log on. Crafting order events will show in chat."
+L.DEBUG_OFF = "Debug log off."
+L.WIPE_CONFIRM = "Delete all your TrustCrafter history on %s? This can't be undone."
+L.WIPE_DONE = "History on this realm deleted."
+L.LOOKUP_USAGE = "Usage: /tc lookup Name (or Name-Realm)"
+L.LOOKUP_NONE = "You haven't used %s as a crafter yet."
+
+-- Tooltip
+L.TIP_CRAFTED = "crafted %dx for you"
+L.TIP_MET = "%d/%d met or exceeded"
+L.TIP_AVG = "avg %s"
+L.TIP_NOT_FILLED = "%d not filled"
+
+-- History window
+L.WINDOW_TITLE = "TrustCrafter"
+L.SEARCH_PLACEHOLDER = "Search crafter or item"
+L.COUNT = "%d of %d orders"
+L.EMPTY_NONE = "No crafting orders logged yet.\nPlace an order at a crafting orders NPC and open My Orders there. Orders you placed before installing TrustCrafter are added too, while the game still lists them."
+L.EMPTY_FILTERED = "No orders match these filters."
+L.ITEM_LOADING = "Loading item..."
+L.NO_CRAFTER = "not taken yet"
+
+L.COL_DATE = "Date"
+L.COL_CRAFTER = "Crafter"
+L.COL_ITEM = "Item"
+L.COL_ASKED = "Asked"
+L.COL_GOT = "Got"
+L.COL_OUTCOME = "Outcome"
+L.COL_TIME = "Took"
+L.COL_TIP = "Tip"
+
+L.OUTCOME_EXCEEDED = "Exceeded"
+L.OUTCOME_MET = "Met"
+L.OUTCOME_BELOW = "Below"
+L.OUTCOME_NOT_FILLED = "Not filled"
+L.OUTCOME_OPEN = "Open"
+
+L.FILTER_OUTCOME = "Outcome: %s"
+L.FILTER_PROFESSION = "Profession: %s"
+L.FILTER_ALL = "All"
+L.FILTER_MET_OR_BETTER = "Met or exceeded"
+L.FILTER_BELOW = "Below"
+L.FILTER_NOT_FILLED = "Not filled"
+L.FILTER_OPEN = "Open"
+
+-- Order details
+L.DETAIL_PICK = "Click an order to see its details and add a note."
+L.FACT_CRAFTER = "Crafter"
+L.FACT_CUSTOMER = "Ordered by"
+L.FACT_TYPE = "Order"
+L.TYPE_PUBLIC = "Public"
+L.TYPE_GUILD = "Guild"
+L.TYPE_PERSONAL = "Personal"
+L.FACT_QUALITY = "Quality"
+L.FACT_QUALITY_VALUE = "asked %s, got %s, %s"
+L.FACT_NO_MINIMUM = "no minimum"
+L.FACT_PLACED = "Placed"
+L.FACT_FILLED = "Filled"
+L.FACT_CLOSED = "Closed"
+L.FACT_APPROX = "(about, first seen then)"
+L.FACT_TURNAROUND = "Took"
+L.FACT_TIP = "Tip"
+
+L.NOTE_LABEL = "Your note"
+L.NOTE_PLACEHOLDER = "What was ordered and what happened"
+L.NOTE_COUNTER = "%d/%d"
+L.NOTE_HINT = "Stick to facts. Saving replaces your earlier note."
+L.REVIEW_OWN_CRAFT = "One of your own characters crafted this, so it can't be rated."
+L.REVIEW_OTHER_CHAR = "Only %s, who placed this order, can rate it."
+L.REVIEW_NOT_TAKEN = "Nobody has taken this order yet, so there's nothing to rate."
+L.TAGS_LABEL = "Tags"
+L.TAG_FAST = "Fast"
+L.TAG_FRIENDLY = "Friendly"
+L.TAG_OWN_MATS = "Own mats"
+L.TAG_AGAIN = "Would again"
+L.TAG_SLOW = "Slow"
+L.PRIVATE_LABEL = "Keep private"
+L.PRIVATE_TIP = "Private notes and tags never leave your computer, even once sharing with your guild is added."

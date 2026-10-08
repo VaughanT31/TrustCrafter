@@ -1,0 +1,54 @@
+name: Bug report
+description: Something in TrustCrafter is wrong or broken.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! The more of this you fill in, the faster it gets fixed.
+  - type: input
+    id: version
+    attributes:
+      label: Addon version
+      description: Shown in the addon list at the character screen.
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: region
+    attributes:
+      label: Region
+      options:
+        - EU
+        - US
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: order
+    attributes:
+      label: Order type
+      options:
+        - Public
+        - Guild
+        - Personal
+        - Not about one order
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: debug
+    attributes:
+      label: Debug log (if it's about an order not being logged)
+      description: Type /tc debug, place or check the order at the crafting orders NPC, then paste the grey TrustCrafter lines from chat.
+      render: text
+  - type: textarea
+    id: error
+    attributes:
+      label: Lua error (if any)
+      description: Turn on errors with /console scriptErrors 1, or use BugSack, and paste the full text.
+      render: text

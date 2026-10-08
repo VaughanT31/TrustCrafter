@@ -1,0 +1,11 @@
+name: Idea or suggestion
+description: Something TrustCrafter could do better or do next.
+labels: ["idea"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: What would you like TrustCrafter to do, and how would it help you?
+    validations:
+      required: true

@@ -1,1 +1,12 @@
 scope.md
+
+# Editors and OS
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+.DS_Store
+
+# Packaging output
+.releases/
+*.zip
