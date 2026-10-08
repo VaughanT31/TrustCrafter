@@ -21,6 +21,8 @@ local DEFAULTS = {
     settings = {
         tooltip = true,
         debug = false,
+        minimapHide = false,
+        minimapAngle = 220,
     },
     realms = {},
     debugLog = {},

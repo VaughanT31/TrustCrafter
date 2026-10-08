@@ -21,3 +21,4 @@ Data\Ledger.lua
 UI\Skin.lua
 UI\Tooltip.lua
 UI\HistoryWindow.lua
+UI\MinimapButton.lua

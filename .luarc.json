@@ -11,6 +11,8 @@
     "StaticPopup_Show",
     "UISpecialFrames",
     "UIParent",
+    "Minimap",
+    "GetCursorPosition",
     "GameTooltip",
     "Enum",
     "C_CraftingOrders",

@@ -12,4 +12,5 @@ First version: your own crafting order ledger.
 - **Notes and tags** on your own orders: Fast, Friendly, Own mats, Would again, Slow. The facts can't be edited.
 - **Tooltip line** on players you have used as a crafter.
 - **History window** (`/tc`) with sorting, search, and outcome and profession filters.
+- **Minimap button** to open the history window; drag it to move, `/tc minimap` hides it.
 - `/tc lookup`, `/tc tooltip`, `/tc wipe` and `/tc debug`.
