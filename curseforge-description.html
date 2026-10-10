@@ -1,29 +1,66 @@
-<h2>Know which crafters you can trust</h2>
-<p>Crafting orders are full of crafters you know nothing about. <strong>TrustCrafter</strong> keeps a private ledger of every order you place, so next time you can see at a glance whether a crafter has done good work for you before.</p>
-<h3>What it does</h3>
+<p><strong>Know which crafters you can trust.</strong> Crafting orders are full of crafters you know nothing about. Trust Crafter keeps a private ledger of every order you place, so the next time you see a crafter you can tell at a glance whether they've done good work for you before.</p>
 <ul>
-<li><strong>Logs every order automatically:</strong> who crafted it, the quality you asked for and got, when it was placed and filled, how long it took, and the tip you paid. No typing needed.</li>
-<li><strong>Outcome from the facts:</strong> each order is marked Met, Exceeded or Below by comparing what you asked for with what you got. Orders nobody filled are kept, but never held against anyone.</li>
-<li><strong>Picked up when you collect your mail:</strong> no need to go back to the crafting orders NPC.</li>
-<li><strong>Your notes and tags</strong> (Fast, Friendly, Own mats, Would again, Slow) sit next to the facts, never on top of them.</li>
-<li><strong>Everywhere you need it:</strong> hover a crafter, right-click their name in chat, or type it for a personal order to see <em>crafted 4x for you | 4/4 met or exceeded | avg 38 min</em>.</li>
-<li><strong>Online dot</strong> beside each crafter: green online, red offline, grey when the game can't tell.</li>
-<li><strong>Export</strong> your orders as CSV for a spreadsheet.</li>
-<li><strong>History window</strong> (<code>/tc</code>): every order on your realm, sortable, with search and outcome and profession filters.</li>
+<li><strong>Every order logged automatically:</strong> crafter, quality asked for and received, time taken and tip.</li>
+<li><strong>Outcomes from the facts:</strong> Met, Exceeded or Below, never a star rating.</li>
+<li><strong>Right where you need it:</strong> tooltips, the crafting orders window and the right-click menu.</li>
+<li><strong>Online dot:</strong> see whether a crafter you trust is online right now.</li>
 </ul>
-<h3>Fair to crafters</h3>
+<p>No typing and no setup. Place orders as usual and Trust Crafter fills itself in.</p>
+
+<p><span style="color: #ffd100;"><strong>Logs Every Order for You</strong></span><br>Placing a crafting order logs it straight away. For each one Trust Crafter records who crafted it, the quality you asked for and the quality you got, when it was placed and filled, how long it took, the tip you paid and whether it was a public, guild or personal order. Collecting the crafted item from your mail marks it filled, with the crafter and quality read from the mail, so there's no need to go back to the crafting orders NPC. An order one of your own characters fills is marked the moment you fill it. Orders placed before you installed it are added too, for as long as the game still lists them.</p>
+
+<p><span style="color: #ffd100;"><strong>Outcomes From the Facts</strong></span><br>Each order is marked <strong>Met</strong>, <strong>Exceeded</strong> or <strong>Below</strong> by comparing the quality you asked for with the quality you got. Orders nobody filled are kept as Not filled and never counted against anyone. Results read as rates, not stars: "4/4 met or exceeded" tells you far more than a score.</p>
+
+<p><span style="color: #ffd100;"><strong>Shows It Where You Need It</strong></span></p>
 <ul>
-<li>You can only rate a crafter you actually placed an order with.</li>
-<li>The facts can't be edited, and there is no "failed" button: an order that met the quality you asked for always shows as met.</li>
-<li>How long an order took is shown as a number, never as a score.</li>
-<li>Nobody can rate their own work, not even on an alt.</li>
+<li><strong>Tooltip:</strong> hover a player you've used as a crafter to see <em>crafted 4x for you | 4/4 met or exceeded | avg 38 min</em>.</li>
+<li><strong>Crafting orders window:</strong> type a crafter's name for a personal order and your history with them shows beside it. In My Orders, a tick marks crafters you've used before, yellow if any order came in below what you asked for.</li>
+<li><strong>Right-click menu</strong> on a player's name in chat, the friends list, your guild or a unit frame opens your history with that crafter.</li>
 </ul>
-<h3>Commands</h3>
+
+<p><span style="color: #ffd100;"><strong>Is the Crafter Online?</strong></span><br>A dot beside each crafter: green when they're online, red when the game says they're offline, grey when it can't tell. It uses the game's own whisper check plus your friends list, group and Battle.net friends, and sends nothing to the crafter. Shown in the history window, the order details, the personal order name box, the My Orders tooltip and <code>/tc lookup</code>.</p>
+
+<p><span style="color: #ffd100;"><strong>History Window and Export</strong></span><br>Open it with <code>/tc</code> or the minimap button: every order on your realm, sortable by date, crafter, item, outcome, time taken or tip, with search and outcome and profession filters. <code>/tc export</code> or the Export button gives you every order as CSV for a spreadsheet.</p>
+
+<p><span style="color: #ffd100;"><strong>Notes and Tags</strong></span><br>Add a short note and tags like <em>Fast</em>, <em>Friendly</em>, <em>Own mats</em>, <em>Would again</em> or <em>Slow</em> to your own orders. Your words sit next to the facts, never on top of them.</p>
+
+<p><span style="color: #ffd100;"><strong>Fair to Crafters</strong></span></p>
 <ul>
-<li><code>/tc</code> or the minimap button opens your order history</li>
-<li><code>/tc lookup Name</code> shows what you know about a crafter</li>
-<li><code>/tc help</code> lists all commands</li>
+<li>Only the character who placed an order can rate it.</li>
+<li>Orders crafted by one of your own characters can't be rated, so nobody rates their own work, not even on an alt.</li>
+<li>The facts can't be edited, and there's no "failed" button: an order that met the quality you asked for always shows as met.</li>
+<li>How long an order took is shown as a number, never as a score. They might have been asleep.</li>
 </ul>
-<h3>Coming next</h3>
-<p>Guild sharing, with orders confirmed by both the customer and the crafter, then sharing across your realm. Sharing will be off by default, and private notes never leave your computer.</p>
-<p>Retail (Midnight) only. Everything is kept per realm, because public crafting orders only reach crafters on your own realm.</p>
+
+<p><span style="color: #ffd100;"><strong>Commands</strong></span></p>
+<ul>
+<li><code>/tc</code>: open or close your order history (or click the minimap button)</li>
+<li><code>/tc lookup Name</code>: what you know about a crafter</li>
+<li><code>/tc export</code>: copy your orders as CSV</li>
+<li><code>/tc tooltip</code>: turn the tooltip line on or off</li>
+<li><code>/tc minimap</code>: hide or show the minimap button</li>
+<li><code>/tc wipe</code>: delete your history on this realm (asks first)</li>
+<li><code>/tc help</code>: every command</li>
+</ul>
+
+<p><span style="color: #ffd100;"><strong>Coming Next</strong></span><br><strong>Guild sharing</strong> in 2.0: see how your guild's orders with a crafter went, with orders confirmed by both the customer and the crafter. Then <strong>realm sharing</strong> in 3.0: ask other Trust Crafter users on your realm about a crafter, always labelled separately from what you and your guild know. Sharing will be off by default, and notes marked private never leave your computer.</p>
+
+<p><span style="color: #ffd100;"><strong>Good to Know</strong></span></p>
+<ul>
+<li>Retail (Midnight) only.</li>
+<li>Everything is kept per realm, because public crafting orders only reach crafters on your own realm.</li>
+<li>Mail doesn't say exactly when it was sent, so time taken from mail is worked out and shown with a "~".</li>
+<li>Bugs and ideas are welcome in the comments. <code>/tc debug</code> logs crafting order events to chat for bug reports.</li>
+</ul>
+
+<p><span style="color: #ffd100;"><strong>Also by CtrlShiftZed</strong></span></p>
+<ul>
+<li><a href="https://www.curseforge.com/wow/addons/auction-coach">Auction Coach</a>: plain-English Auction House advice, a simpler alternative to TSM.</li>
+<li><a href="https://www.curseforge.com/wow/addons/alt-inventory-tracker">Alt Inventory</a>: how many of an item each of your characters has, right in the tooltip.</li>
+<li><a href="https://www.curseforge.com/wow/addons/recommended-stats">Recommended Stats</a>: stat priority, BiS gear, talents and rotation from the top players of your spec.</li>
+<li><a href="https://www.curseforge.com/wow/addons/party-item-level-checker">Party iLvl Check</a>: your group's item level, M+ score and buffs the moment you enter a dungeon.</li>
+<li><a href="https://www.curseforge.com/wow/addons/push-planner">Push Planner</a>: the fastest set of Mythic+ keys to reach your target rating.</li>
+</ul>
+
+<p><span style="color: #ffd100;"><strong>Support</strong></span><br>Trust Crafter is free. If it helps you, you can buy me a coffee.</p>
+<p><a href="https://ko-fi.com/G2G01YLR68" target="_blank" rel="nofollow noopener"><img style="border: 0px;" src="https://storage.ko-fi.com/cdn/brandasset/v2/support_me_on_kofi_badge_red.png" alt="Buy Me a Coffee at ko-fi.com" height="36"></a></p>
