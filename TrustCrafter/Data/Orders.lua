@@ -63,6 +63,7 @@ local TYPE_KEYS = { Public = "PUBLIC", Guild = "GUILD", Personal = "PERSONAL", N
 local function TypeOf(orderType)
     return TYPE_KEYS[TYPE_NAMES[orderType] or ""] or "PUBLIC"
 end
+Orders.TypeOf = TypeOf
 
 -- ---------------------------------------------------------------------
 -- Quality
@@ -112,6 +113,7 @@ local function ProfessionOf(spellID)
     end
     return skillLineName
 end
+Orders.ProfessionOf = ProfessionOf
 
 -- ---------------------------------------------------------------------
 -- Recording
@@ -249,14 +251,16 @@ for _, event in ipairs({ "CRAFTINGORDERS_ORDER_PLACEMENT_RESPONSE", "CRAFTINGORD
 end
 
 -- ---------------------------------------------------------------------
--- Filled by one of your own characters
+-- Orders you fill
 --
 -- When you fill an order, the game confirms it with
 -- CRAFTINGORDERS_FULFILL_ORDER_RESPONSE(result, orderID). If that order is
 -- in the ledger, one of your own characters on this realm placed it, so it
 -- is marked filled right away: exact time, no need for the customer to
--- reopen My Orders. The claimed order is read while it is being crafted, for
--- the delivered item and its quality.
+-- reopen My Orders. Any other player's order goes to your crafted log
+-- (Data/Crafted.lua). The claimed order is read while it is being crafted,
+-- for the customer, the delivered item and its quality; the "order
+-- fulfilled" message that follows adds the customer and tip if missing.
 -- ---------------------------------------------------------------------
 
 local claimed = {}
@@ -267,11 +271,27 @@ local function ReadClaimed(orderID)
     if ok and type(info) == "table" and info.orderID == orderID then claimed[orderID] = info end
 end
 
+local FULFILL_OK = (Enum and Enum.CraftingOrderResult and Enum.CraftingOrderResult.Ok) or 0
+
 Events:On("CRAFTINGORDERS_CLAIMED_ORDER_UPDATED", function(_, orderID)
-    if orderID then ReadClaimed(orderID) end
+    if not orderID then return end
+    ReadClaimed(orderID)
+    if ns.db then ns.Crafted:NoteClaim(orderID) end
 end)
 
-local FULFILL_OK = (Enum and Enum.CraftingOrderResult and Enum.CraftingOrderResult.Ok) or 0
+Events:On("CRAFTINGORDERS_CLAIM_ORDER_RESPONSE", function(_, result, orderID)
+    if result == FULFILL_OK and orderID and ns.db then ns.Crafted:NoteClaim(orderID) end
+end)
+
+-- The latest "order fulfilled" message, the order filled just before it,
+-- and a fill still waiting for it (nothing else known about the order):
+-- the message has no order ID, so it is matched to a fill within seconds.
+local lastMessage, lastFilled, pendingFill
+local MESSAGE_SECONDS = 10
+
+local function RecentMessage()
+    return lastMessage and GetTime() - lastMessage.at <= MESSAGE_SECONDS and lastMessage or nil
+end
 
 function Orders:FilledByMe(orderID, now)
     local record = ns.db and orderID and ns:RealmData().orders[tostring(orderID)]
@@ -302,8 +322,42 @@ Events:On("CRAFTINGORDERS_FULFILL_ORDER_RESPONSE", function(_, result, orderID)
     local now = Util.Now()
     C_Timer.After(0.5, function()
         ReadClaimed(orderID)
-        Orders:FilledByMe(orderID, now)
+        local info = claimed[orderID]
+        if ns.db and ns.Ledger:Get(orderID) then
+            Orders:FilledByMe(orderID, now)
+        elseif ns.db and ns.Crafted:Record(orderID, now, info, RecentMessage()) then
+            claimed[orderID] = nil
+            lastFilled = { id = orderID, at = GetTime() }
+            ns.Events:Fire("TC_LEDGER_CHANGED")
+        elseif ns.db and not info then
+            pendingFill = { id = orderID, now = now, at = GetTime() }
+        end
     end)
+end)
+
+-- CRAFTINGORDERS_DISPLAY_CRAFTER_FULFILLED_MSG(orderType, itemName,
+-- customerName, tip, quantity), shown to the crafter after a fill.
+Events:On("CRAFTINGORDERS_DISPLAY_CRAFTER_FULFILLED_MSG", function(_, _, _, customer, tip)
+    if not ns.db then return end
+    if (issecretvalue and (issecretvalue(customer) or issecretvalue(tip))) then return end
+    lastMessage = {
+        at = GetTime(),
+        customer = type(customer) == "string" and customer ~= "" and customer or nil,
+        tip = type(tip) == "number" and tip or nil,
+    }
+    -- Arrived after the fill: log a fill that was waiting for it, or add
+    -- what it knows to one logged a moment ago.
+    if pendingFill and GetTime() - pendingFill.at <= MESSAGE_SECONDS then
+        local fill = pendingFill
+        pendingFill = nil
+        if ns.Crafted:Record(fill.id, fill.now, nil, lastMessage) then
+            lastFilled = { id = fill.id, at = GetTime() }
+            ns.Events:Fire("TC_LEDGER_CHANGED")
+        end
+    elseif lastFilled and GetTime() - lastFilled.at <= MESSAGE_SECONDS
+        and ns.Crafted:AddMessage(lastFilled.id, lastMessage) then
+        ns.Events:Fire("TC_LEDGER_CHANGED")
+    end
 end)
 
 -- ---------------------------------------------------------------------
@@ -425,7 +479,8 @@ local DEBUG_EVENTS = {
     "CRAFTINGORDERS_CAN_REQUEST", "CRAFTINGORDERS_UPDATE_ORDER_COUNT",
     "CRAFTINGORDERS_CUSTOMER_OPTIONS_PARSED", "CRAFTINGORDERS_UPDATE_CUSTOMER_NAME",
     "CRAFTINGORDERS_DISPLAY_CRAFTER_FULFILLED_MSG", "CRAFTINGORDERS_FULFILL_ORDER_RESPONSE",
-    "CRAFTINGORDERS_CLAIMED_ORDER_UPDATED", "CRAFTINGORDERS_UNEXPECTED_ERROR",
+    "CRAFTINGORDERS_CLAIMED_ORDER_UPDATED", "CRAFTINGORDERS_CLAIM_ORDER_RESPONSE",
+    "CRAFTINGORDERS_UNEXPECTED_ERROR",
 }
 
 function Log(event, ...)

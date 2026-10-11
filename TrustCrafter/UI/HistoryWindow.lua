@@ -1,7 +1,9 @@
--- TrustCrafter - history window (/tc): every crafting order you placed on
--- this realm, newest first. Sort by clicking a column, filter by text,
--- outcome and profession. Click an order to see its facts and add a note
--- or tags. The facts themselves can't be edited.
+-- TrustCrafter - history window (/tc), with two tabs:
+--   My orders           every crafting order you placed on this realm
+--   Crafted for others  every order you filled for another player
+-- Newest first. Sort by clicking a column, filter by text, outcome and
+-- profession. Click an order to see its facts; on your own orders you can
+-- add a note or tags. The facts themselves can't be edited.
 
 local _, ns = ...
 local L, Util, Skin = ns.L, ns.Util, ns.Skin
@@ -9,12 +11,13 @@ local L, Util, Skin = ns.L, ns.Util, ns.Skin
 local HistoryWindow = {}
 ns.HistoryWindow = HistoryWindow
 
-local WIDTH, HEIGHT = 780, 560
+local WIDTH, HEIGHT = 780, 590
 local PAD = 16
 local ROW_HEIGHT = 22
 local DETAIL_HEIGHT = 160
-local CONTROLS_Y = -44
-local HEADER_Y = -78
+local TABS_Y = -40
+local CONTROLS_Y = -74
+local HEADER_Y = -108
 
 -- Column layout: key, x offset, width, justify. Shared by header and rows.
 local COLUMNS = {
@@ -38,11 +41,37 @@ local OUTCOME_COLORS = {
 }
 local OUTCOME_ORDER = { EXCEEDED = 1, MET = 2, BELOW = 3, OPEN = 4, NOT_FILLED = 5 }
 
-local OUTCOME_FILTERS = { "ALL", "MET_OR_BETTER", "BELOW", "NOT_FILLED", "OPEN" }
+-- Orders you filled are always filled, so their list has fewer filters.
+local OUTCOME_FILTERS = {
+    MINE = { "ALL", "MET_OR_BETTER", "BELOW", "NOT_FILLED", "OPEN" },
+    CRAFTED = { "ALL", "MET_OR_BETTER", "BELOW" },
+}
+local VIEWS = { "MINE", "CRAFTED" }
 
 local frame
 local rows = {}
-local state = { sort = "date", desc = true, search = "", outcome = 1, profession = nil, selected = nil }
+local state = { view = "MINE", sort = "date", desc = true, search = "", outcome = 1, profession = nil, selected = nil }
+
+local function Crafting()
+    return state.view == "CRAFTED"
+end
+
+local function Source()
+    return Crafting() and ns.Crafted:All() or ns.Ledger:All()
+end
+
+local function GetRecord(id)
+    if not id then return nil end
+    if Crafting() then return ns.Crafted:Get(id) end
+    return ns.Ledger:Get(id)
+end
+
+-- The other player on an order: the crafter on yours, the customer on the
+-- ones you filled.
+local function PersonOf(record)
+    if Crafting() then return record.customer, record.customerGuid end
+    return record.crafter, record.crafterGuid
+end
 
 -- ---------------------------------------------------------------------
 -- Record helpers
@@ -62,8 +91,14 @@ local function ItemName(record)
     return name
 end
 
+-- Placing to filling on your orders, taking to filling on crafted ones.
+local function TimeSeconds(record)
+    if Crafting() then return ns.Crafted.CraftTime(record) end
+    return ns.Ledger.Turnaround(record)
+end
+
 local function TimeText(record)
-    local seconds = ns.Ledger.Turnaround(record)
+    local seconds = TimeSeconds(record)
     if not seconds then return "-" end
     local text = Util.FormatDuration(seconds)
     if record.placedApprox or record.completedApprox then text = "~" .. text end
@@ -72,21 +107,21 @@ end
 
 local SORT_VALUE = {
     date = function(r) return r.completedAt or r.placedAt or 0 end,
-    crafter = function(r) return (r.crafter or "~"):lower() end,
+    crafter = function(r) return ((PersonOf(r)) or "~"):lower() end,
     item = function(r) return (ItemName(r) or "~"):lower() end,
     outcome = function(r) return OUTCOME_ORDER[OutcomeKey(r)] end,
-    time = function(r) return ns.Ledger.Turnaround(r) or math.huge end,
+    time = function(r) return TimeSeconds(r) or math.huge end,
     tip = function(r) return r.tip or 0 end,
 }
 
 local function MatchesFilters(record)
-    local filter = OUTCOME_FILTERS[state.outcome]
+    local filter = OUTCOME_FILTERS[state.view][state.outcome]
     local outcome = OutcomeKey(record)
     if filter == "MET_OR_BETTER" and outcome ~= "MET" and outcome ~= "EXCEEDED" then return false end
     if filter ~= "ALL" and filter ~= "MET_OR_BETTER" and outcome ~= filter then return false end
     if state.profession and record.profession ~= state.profession then return false end
     if state.search ~= "" then
-        local hay = ((record.crafter or "") .. " " .. (ItemName(record) or "")):lower()
+        local hay = (((PersonOf(record)) or "") .. " " .. (ItemName(record) or "")):lower()
         if not hay:find(state.search, 1, true) then return false end
     end
     return true
@@ -94,7 +129,7 @@ end
 
 local function VisibleRecords()
     local list = {}
-    for _, record in ipairs(ns.Ledger:All()) do
+    for _, record in ipairs(Source()) do
         if MatchesFilters(record) then list[#list + 1] = record end
     end
     local value = SORT_VALUE[state.sort]
@@ -109,7 +144,7 @@ end
 
 local function Professions()
     local seen, list = {}, {}
-    for _, record in ipairs(ns.Ledger:All()) do
+    for _, record in ipairs(Source()) do
         if record.profession and not seen[record.profession] then
             seen[record.profession] = true
             list[#list + 1] = record.profession
@@ -176,9 +211,10 @@ local function SetRow(row, record)
     row.record = record
     local c = row.cells
     c.date:SetText(Util.FormatDate(record.completedAt or record.placedAt))
-    c.crafter:SetText(record.crafter
-        and (ns.Presence:Dot(record.crafterGuid, record.crafter) .. " " .. Util.ShortName(record.crafter))
-        or ("|cff999999" .. L.NO_CRAFTER .. "|r"))
+    local person, guid = PersonOf(record)
+    c.crafter:SetText(person
+        and (ns.Presence:Dot(guid, person) .. " " .. Util.ShortName(person))
+        or ("|cff999999" .. (Crafting() and L.NO_CUSTOMER or L.NO_CRAFTER) .. "|r"))
     c.item:SetText(ItemName(record) or ("|cff999999" .. L.ITEM_LOADING .. "|r"))
     row.icon:SetTexture(record.itemID and C_Item and C_Item.GetItemIconByID and C_Item.GetItemIconByID(record.itemID) or 134400)
     c.asked:SetText((record.minQuality or 0) > 0 and Util.QualityText(record.minQuality) or "|cff999999-|r")
@@ -310,12 +346,50 @@ local function BuildDetail(parent)
     end)
     detail.private:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-    detail.parts = { detail.title, detail.facts, detail.noteLabel, detail.counter, box, detail.hint,
-        detail.tagLabel, detail.private }
+    -- On orders you filled: no note or tags, just what the record is for.
+    detail.side = detail:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    detail.side:SetPoint("TOPLEFT", right, -12)
+    detail.side:SetPoint("RIGHT", -12, 0)
+    detail.side:SetJustifyH("LEFT")
+    detail.side:SetSpacing(4)
+    detail.side:SetText(L.CRAFTED_SIDE_NOTE)
+
+    detail.parts = { detail.title, detail.facts }
+    detail.reviewParts = { detail.noteLabel, detail.counter, box, detail.hint, detail.tagLabel, detail.private }
     return detail
 end
 
+local function QualityLine(record)
+    local asked = (record.minQuality or 0) > 0 and Util.QualityText(record.minQuality) or L.FACT_NO_MINIMUM
+    local got = record.delivered and Util.QualityText(record.delivered) or "-"
+    local color = OUTCOME_COLORS[OutcomeKey(record)]
+    local outcome = ("|cff%02x%02x%02x%s|r"):format(color[1] * 255, color[2] * 255, color[3] * 255,
+        L["OUTCOME_" .. OutcomeKey(record)])
+    return L.FACT_QUALITY_VALUE:format(asked, got, outcome)
+end
+
+-- Facts of an order you filled for someone else.
+local function CraftedFactLines(record)
+    local lines = {}
+    local function Add(label, value) lines[#lines + 1] = "|cff999999" .. label .. "|r  " .. value end
+    Add(L.FACT_CUSTOMER_OF, record.customer
+        and (record.customer .. "   " .. ns.Presence:Label(record.customerGuid, record.customer))
+        or L.NO_CUSTOMER)
+    if record.crafter then Add(L.FACT_CRAFTED_BY, Util.ShortName(record.crafter)) end
+    Add(L.FACT_TYPE, (L["TYPE_" .. (record.orderType or "PUBLIC")] or record.orderType or "-")
+        .. (record.recraft and (", " .. L.FACT_RECRAFT) or ""))
+    Add(L.FACT_QUALITY, QualityLine(record))
+    if record.claimedAt then Add(L.FACT_CLAIMED, date("%d %b %H:%M", record.claimedAt)) end
+    if record.completedAt then Add(L.FACT_FILLED, date("%d %b %H:%M", record.completedAt)) end
+    Add(L.FACT_CRAFT_TIME, TimeText(record))
+    local tip = (record.tip or 0) > 0 and Util.FormatMoney(record.tip) or "-"
+    if (record.cut or 0) > 0 then tip = tip .. "  " .. L.FACT_CUT:format(Util.FormatMoney(record.cut)) end
+    Add(L.FACT_TIP, tip)
+    return table.concat(lines, "\n")
+end
+
 local function FactLines(record)
+    if Crafting() then return CraftedFactLines(record) end
     local lines = {}
     local function Add(label, value) lines[#lines + 1] = "|cff999999" .. label .. "|r  " .. value end
 
@@ -324,12 +398,7 @@ local function FactLines(record)
         or L.NO_CRAFTER)
     if record.customer then Add(L.FACT_CUSTOMER, Util.ShortName(record.customer)) end
     Add(L.FACT_TYPE, L["TYPE_" .. (record.orderType or "PUBLIC")] or record.orderType or "-")
-    local asked = (record.minQuality or 0) > 0 and Util.QualityText(record.minQuality) or L.FACT_NO_MINIMUM
-    local got = record.delivered and Util.QualityText(record.delivered) or "-"
-    local color = OUTCOME_COLORS[OutcomeKey(record)]
-    local outcome = ("|cff%02x%02x%02x%s|r"):format(color[1] * 255, color[2] * 255, color[3] * 255,
-        L["OUTCOME_" .. OutcomeKey(record)])
-    Add(L.FACT_QUALITY, L.FACT_QUALITY_VALUE:format(asked, got, outcome))
+    Add(L.FACT_QUALITY, QualityLine(record))
     if record.placedAt then
         Add(L.FACT_PLACED, date("%d %b %H:%M", record.placedAt) .. (record.placedApprox and (" " .. L.FACT_APPROX) or ""))
     end
@@ -343,12 +412,23 @@ local function FactLines(record)
 end
 
 local function RefreshDetail(detail)
-    local record = state.selected and ns.Ledger:Get(state.selected)
+    local record = GetRecord(state.selected)
+    local review = record ~= nil and not Crafting()
+    detail.empty:SetText(Crafting() and L.DETAIL_PICK_CRAFTED or L.DETAIL_PICK)
     detail.empty:SetShown(record == nil)
     for _, part in ipairs(detail.parts) do part:SetShown(record ~= nil) end
-    for _, button in pairs(detail.tags) do button:SetShown(record ~= nil) end
+    for _, part in ipairs(detail.reviewParts) do part:SetShown(review) end
+    for _, button in pairs(detail.tags) do button:SetShown(review) end
+    detail.side:SetShown(record ~= nil and Crafting())
     if not record then
         detail.recordID = nil
+        return
+    end
+    if Crafting() then
+        if detail.note:HasFocus() then detail.note:ClearFocus() end
+        detail.recordID = nil
+        detail.title:SetText(record.link or ItemName(record) or L.ITEM_LOADING)
+        detail.facts:SetText(FactLines(record))
         return
     end
 
@@ -391,13 +471,25 @@ end
 -- ---------------------------------------------------------------------
 
 local function UpdateFilterButtons()
-    frame.outcomeButton:SetText(L.FILTER_OUTCOME:format(L["FILTER_" .. OUTCOME_FILTERS[state.outcome]]))
+    frame.outcomeButton:SetText(L.FILTER_OUTCOME:format(L["FILTER_" .. OUTCOME_FILTERS[state.view][state.outcome]]))
     frame.professionButton:SetText(L.FILTER_PROFESSION:format(state.profession or L.FILTER_ALL))
     for key, header in pairs(frame.headers) do
         local arrow = ""
         if state.sort == key then arrow = state.desc and " v" or " ^" end
-        header.label:SetText(L["COL_" .. key:upper()] .. arrow)
+        local label = L["COL_" .. key:upper()]
+        if Crafting() and key == "crafter" then label = L.COL_CUSTOMER end
+        if Crafting() and key == "time" then label = L.COL_CRAFT_TIME end
+        header.label:SetText(label .. arrow)
     end
+    for view, tab in pairs(frame.tabs) do tab:SetActive(view == state.view) end
+    frame.search.placeholder:SetText(Crafting() and L.SEARCH_PLACEHOLDER_CRAFTED or L.SEARCH_PLACEHOLDER)
+end
+
+-- Switching tabs starts the new list unfiltered, except for the search.
+local function SetView(view)
+    if state.view == view then return end
+    state.view, state.outcome, state.profession, state.selected = view, 1, nil, nil
+    HistoryWindow:Refresh()
 end
 
 local function Create()
@@ -407,6 +499,21 @@ local function Create()
 
     frame.count = frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     frame.count:SetPoint("RIGHT", frame.closeButton, "LEFT", -6, 0)
+
+    -- My orders | Crafted for others
+    frame.tabs = {}
+    local previousTab
+    for _, view in ipairs(VIEWS) do
+        local tab = Skin.Tab(frame, L["TAB_" .. view], 170, 26)
+        if previousTab then
+            tab:SetPoint("LEFT", previousTab, "RIGHT", 2, 0)
+        else
+            tab:SetPoint("TOPLEFT", PAD, TABS_Y)
+        end
+        tab:SetScript("OnClick", function() SetView(view) end)
+        frame.tabs[view] = tab
+        previousTab = tab
+    end
 
     -- Search box: crafter or item name.
     local search = CreateFrame("EditBox", nil, frame, "BackdropTemplate")
@@ -434,7 +541,7 @@ local function Create()
     frame.outcomeButton = Skin.Button(frame, nil, 170, 24)
     frame.outcomeButton:SetPoint("LEFT", search, "RIGHT", 8, 0)
     frame.outcomeButton:SetScript("OnClick", function()
-        state.outcome = state.outcome % #OUTCOME_FILTERS + 1
+        state.outcome = state.outcome % #OUTCOME_FILTERS[state.view] + 1
         HistoryWindow:Refresh()
     end)
 
@@ -516,11 +623,16 @@ function HistoryWindow:Refresh()
     if not frame or not frame:IsShown() then return end
     UpdateFilterButtons()
 
-    local all = #ns.Ledger:All()
+    local all = #Source()
     local list = VisibleRecords()
-    frame.count:SetText(L.COUNT:format(#list, all))
+    if Crafting() then
+        local count, people, tips = ns.Crafted.Totals(list)
+        frame.count:SetText(L.COUNT_CRAFTED:format(count, people, Util.FormatMoney(tips)))
+    else
+        frame.count:SetText(L.COUNT:format(#list, all))
+    end
     if all == 0 then
-        frame.empty:SetText(L.EMPTY_NONE)
+        frame.empty:SetText(Crafting() and L.EMPTY_CRAFTED or L.EMPTY_NONE)
     elseif #list == 0 then
         frame.empty:SetText(L.EMPTY_FILTERED)
     else
@@ -542,7 +654,7 @@ end
 function HistoryWindow:ShowCrafter(crafter)
     if not ns.db then return end
     if not frame then Create() end
-    state.outcome, state.profession = 1, nil
+    state.view, state.outcome, state.profession, state.selected = "MINE", 1, nil, nil
     frame:Show()
     frame.search:SetText(Util.ShortName(crafter))
     self:Refresh()

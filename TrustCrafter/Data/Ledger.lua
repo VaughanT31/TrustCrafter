@@ -128,13 +128,16 @@ end
 
 -- ---------------------------------------------------------------------
 -- Export: every order on this realm as CSV, oldest first, for a
--- spreadsheet. Includes private notes: it's your own copy of your data.
+-- spreadsheet: the ones you placed and the ones you filled for others
+-- ("side" placed / crafted). Includes private notes: it's your own copy of
+-- your data. Took is placing to filling on yours, taking to filling on
+-- crafted ones.
 -- ---------------------------------------------------------------------
 
 local CSV_COLUMNS = {
     "order_id", "placed", "filled_or_closed", "times_approximate", "customer", "crafter", "item_id", "item",
     "order_type", "profession", "quality_asked", "quality_got", "outcome", "took_minutes", "tip_gold",
-    "tags", "note", "private",
+    "tags", "note", "private", "side",
 }
 
 local function Csv(value)
@@ -150,24 +153,33 @@ end
 
 function Ledger:ExportCSV()
     local lines = { table.concat(CSV_COLUMNS, ",") }
-    local all = self:All()
+    local all = {}
+    for _, r in ipairs(self:All()) do all[#all + 1] = r end
+    for _, r in ipairs(ns.Crafted:All()) do all[#all + 1] = r end
+    table.sort(all, function(a, b)
+        local ta, tb = a.completedAt or a.placedAt or 0, b.completedAt or b.placedAt or 0
+        if ta ~= tb then return ta > tb end
+        return a.id > b.id
+    end)
     for i = #all, 1, -1 do
         local r = all[i]
+        local crafted = ns.Crafted:Get(r.id) == r
         local tags = {}
         for _, tag in ipairs(self.TAGS) do
             if r.tags and r.tags[tag] then tags[#tags + 1] = tag:lower() end
         end
-        local took = Ledger.Turnaround(r)
+        local took = crafted and ns.Crafted.CraftTime(r) or Ledger.Turnaround(r)
         local item = r.link and r.link:match("%[(.-)%]")
             or (r.itemID and C_Item and C_Item.GetItemInfo and C_Item.GetItemInfo(r.itemID))
         local row = {
-            r.id, IsoTime(r.placedAt), IsoTime(r.completedAt),
+            r.id, IsoTime(r.placedAt or r.claimedAt), IsoTime(r.completedAt),
             (r.placedApprox or r.completedApprox) and "yes" or "no",
             r.customer, r.crafter, r.itemID, item, r.orderType, r.profession,
             (r.minQuality or 0) > 0 and r.minQuality or nil, r.delivered, r.outcome or "OPEN",
             took and math.floor(took / 60 + 0.5) or nil,
             r.tip and string.format("%.2f", r.tip / 10000) or nil,
             table.concat(tags, " "), r.note, r.private and "yes" or "no",
+            crafted and "crafted" or "placed",
         }
         local cells = {}
         for c = 1, #CSV_COLUMNS do cells[c] = Csv(row[c]) end

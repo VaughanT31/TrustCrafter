@@ -32,6 +32,13 @@ function Tooltip.SummaryLine(name, s)
     return name and (name .. ": " .. line) or line
 end
 
+-- "you crafted 3x for them  |  45g in tips"
+function Tooltip.CraftedLine(c)
+    local text = L.TIP_YOU_CRAFTED:format(c.count)
+    if c.tips > 0 then text = text .. "  |  " .. L.TIP_TIPS:format(Util.FormatMoney(c.tips)) end
+    return text
+end
+
 local function OnUnitTooltip(tooltip)
     if not ns.db or not ns.db.settings.tooltip then return end
     if tooltip ~= GameTooltip then return end
@@ -41,9 +48,17 @@ local function OnUnitTooltip(tooltip)
     if not unit or (issecretvalue and issecretvalue(unit)) or not UnitIsPlayer(unit) then return end
     local name, realm = UnitFullName(unit)
     if not name or (issecretvalue and (issecretvalue(name) or (realm and issecretvalue(realm)))) then return end
-    local s = ns.Ledger:Summary(Util.FullName(name, realm))
-    if not s then return end
-    tooltip:AddLine("|cff66ccffTrustCrafter:|r " .. Tooltip.SummaryLine(nil, s), 1, 1, 1, true)
+    local fullName = Util.FullName(name, realm)
+    local s = ns.Ledger:Summary(fullName)
+    local crafted = ns.Crafted:Summary(fullName)
+    if not s and not crafted then return end
+    if s then
+        tooltip:AddLine("|cff66ccffTrustCrafter:|r " .. Tooltip.SummaryLine(nil, s), 1, 1, 1, true)
+    end
+    if crafted then
+        local line = Tooltip.CraftedLine(crafted)
+        tooltip:AddLine(s and line or ("|cff66ccffTrustCrafter:|r " .. line), 1, 1, 1, true)
+    end
     tooltip:Show()
 end
 

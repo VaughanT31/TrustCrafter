@@ -9,6 +9,9 @@
 --     orders  = { [orderID] = record, ... }   see Data/Orders.lua
 --     placing = { { t, orderType, tip }, ... } orders just placed, waiting
 --                                              for their order ID
+--     crafted = { [orderID] = record, ... }   orders you filled for others,
+--                                              see Data/Crafted.lua
+--     claims  = { [orderID] = time, ... }     orders you took, until filled
 --   }
 
 local ADDON_NAME, ns = ...
@@ -58,6 +61,10 @@ function ns:RealmData(realm)
     data.characters = data.characters or {}
     -- Crafting order mails already matched to an order (Data/Orders.lua).
     data.mailSeen = data.mailSeen or {}
+    -- Orders you filled for other players, and ones you took but haven't
+    -- filled yet (Data/Crafted.lua).
+    data.crafted = data.crafted or {}
+    data.claims = data.claims or {}
     return data
 end
 
@@ -143,5 +150,6 @@ end)
 
 ns.Events:On("PLAYER_LOGIN", function()
     ns:RealmData().characters[Util.FullName(UnitName("player"))] = true
+    ns.Crafted:PruneClaims()
     ns.Events:Fire("TC_LOGIN")
 end)

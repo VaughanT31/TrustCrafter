@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0
+
+- **Crafted for others:** a new tab in the history window logs every crafting order you fill for another player: the customer, the quality you delivered against what they asked for, your craft time from taking the order to filling it, and the tip. The top of the list adds up your orders, customers and tips, and it has the same search, outcome and profession filters.
+- **Tooltip:** hovering a player you have crafted for says how many times and how much they tipped.
+- **Export** now includes the orders you crafted for others, marked in a new `side` column.
+- Orders from your own characters stay on the My orders tab, and NPC (patron) orders aren't logged.
+- **Fixed:** a Lua error that repeated when mousing over players in dungeons and raids (Midnight's secret values).
+
 ## 1.1.0
 
 - **Online dot beside every crafter:** green when they are online, red when the game says they are offline, grey when it can't tell. Shown in the history window, the order details, the personal order name box, the My Orders tooltip and `/tc lookup`.
