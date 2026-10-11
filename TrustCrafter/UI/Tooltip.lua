@@ -36,10 +36,10 @@ local function OnUnitTooltip(tooltip)
     if not ns.db or not ns.db.settings.tooltip then return end
     if tooltip ~= GameTooltip then return end
     local _, unit = tooltip:GetUnit()
-    if not unit or not UnitIsPlayer(unit) then return end
+    -- The unit token and names can be secret values in restricted content
+    -- (instances, combat); never touch those.
+    if not unit or (issecretvalue and issecretvalue(unit)) or not UnitIsPlayer(unit) then return end
     local name, realm = UnitFullName(unit)
-    -- Names can be secret values in some restricted situations; never
-    -- touch those.
     if not name or (issecretvalue and (issecretvalue(name) or (realm and issecretvalue(realm)))) then return end
     local s = ns.Ledger:Summary(Util.FullName(name, realm))
     if not s then return end
