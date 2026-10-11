@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.0
+
+- **Works with CraftScan:** if you use CraftScan to find crafting customers in chat, hovering a customer in its orders window or its new request banner now shows your Trust Crafter history with them: how many times you've crafted for them and how much they tipped, and how their orders went if they've crafted for you. Nothing changes if CraftScan isn't installed, and the line follows the existing tooltip setting.
+
 ## 1.2.0
 
 - **Crafted for others:** a new tab in the history window logs every crafting order you fill for another player: the customer, the quality you delivered against what they asked for, your craft time from taking the order to filling it, and the tip. The top of the list adds up your orders, customers and tips, and it has the same search, outcome and profession filters.

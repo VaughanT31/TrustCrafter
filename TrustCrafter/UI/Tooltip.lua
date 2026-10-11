@@ -39,6 +39,27 @@ function Tooltip.CraftedLine(c)
     return text
 end
 
+function Tooltip.HasHistory(fullName)
+    return ns.Ledger:Summary(fullName) ~= nil or ns.Crafted:Summary(fullName) ~= nil
+end
+
+-- Adds both sides of your history with a player ("Name-Realm") to a
+-- tooltip: as your crafter, and as a customer you crafted for. Used here
+-- and by UI/CraftScan.lua. Returns true when anything was added.
+function Tooltip.AddHistory(tooltip, fullName)
+    local s = ns.Ledger:Summary(fullName)
+    local crafted = ns.Crafted:Summary(fullName)
+    if not s and not crafted then return false end
+    if s then
+        tooltip:AddLine("|cff66ccffTrustCrafter:|r " .. Tooltip.SummaryLine(nil, s), 1, 1, 1, true)
+    end
+    if crafted then
+        local line = Tooltip.CraftedLine(crafted)
+        tooltip:AddLine(s and line or ("|cff66ccffTrustCrafter:|r " .. line), 1, 1, 1, true)
+    end
+    return true
+end
+
 local function OnUnitTooltip(tooltip)
     if not ns.db or not ns.db.settings.tooltip then return end
     if tooltip ~= GameTooltip then return end
@@ -48,18 +69,7 @@ local function OnUnitTooltip(tooltip)
     if not unit or (issecretvalue and issecretvalue(unit)) or not UnitIsPlayer(unit) then return end
     local name, realm = UnitFullName(unit)
     if not name or (issecretvalue and (issecretvalue(name) or (realm and issecretvalue(realm)))) then return end
-    local fullName = Util.FullName(name, realm)
-    local s = ns.Ledger:Summary(fullName)
-    local crafted = ns.Crafted:Summary(fullName)
-    if not s and not crafted then return end
-    if s then
-        tooltip:AddLine("|cff66ccffTrustCrafter:|r " .. Tooltip.SummaryLine(nil, s), 1, 1, 1, true)
-    end
-    if crafted then
-        local line = Tooltip.CraftedLine(crafted)
-        tooltip:AddLine(s and line or ("|cff66ccffTrustCrafter:|r " .. line), 1, 1, 1, true)
-    end
-    tooltip:Show()
+    if Tooltip.AddHistory(tooltip, Util.FullName(name, realm)) then tooltip:Show() end
 end
 
 if TooltipDataProcessor and Enum.TooltipDataType then

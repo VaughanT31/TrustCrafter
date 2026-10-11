@@ -42,6 +42,8 @@ You also see it:
 
 **Crafted for others:** the second tab of the history window logs every crafting order you fill for another player: who it was for, the quality you delivered against what they asked for, how long you took from taking the order to filling it, and the tip. The top of the list adds up how many orders, for how many customers and how much in tips. Hover a player you have crafted for and the tooltip says so too ("you crafted 3x for them"). Orders from your own characters stay on the My orders tab, and NPC (patron) orders aren't logged. This is also your side of each order for guild sharing, coming next.
 
+**Works with CraftScan:** if you also use [CraftScan](https://www.curseforge.com/wow/addons/craftscan) to find customers in chat, hovering a customer in its orders window or its new request banner shows your history with them, so you know who you've crafted for before and how they tipped. Nothing changes if CraftScan isn't installed.
+
 **Export:** `/tc export` (or Export in the history window) gives you every order as CSV to paste into a spreadsheet, the ones you placed and the ones you crafted for others (the `side` column says which).
 
 Personal orders count the same as public and guild ones. The order type is kept with each order, so you can always see which it was.
