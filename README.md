@@ -42,6 +42,17 @@ You also see it:
 
 **Crafted for others:** the second tab of the history window logs every crafting order you fill for another player: who it was for, the quality you delivered against what they asked for, how long you took from taking the order to filling it, and the tip. The top of the list adds up how many orders, for how many customers and how much in tips. Hover a player you have crafted for and the tooltip says so too ("you crafted 3x for them"). Orders from your own characters stay on the My orders tab, and NPC (patron) orders aren't logged. This is also your side of each order for guild sharing, coming next.
 
+**Your customers when you craft:** browsing public, guild or personal orders as a crafter, a tick marks customers you've crafted for before. Hover the order for how many times and how much they tipped; open it and the same shows beside their name.
+
+**Options:** Esc > Options > AddOns > TrustCrafter, or `/tc options`. Turn the tooltip line, online dots, minimap button, crafting orders window and CraftScan lines on or off, export, or delete your history.
+
+**Guild sharing (2.0):** turn on *Share with my guild* in the options. Look a crafter up (history window, `/tc lookup`, the personal order name box or a My Orders row) and Trust Crafter asks your guild how their orders with them went, even for a crafter you've never used: *Guild: 7 orders from 3 people | 6/7 met or exceeded | 5 confirmed*.
+
+- Answers come straight from whoever wrote them, by whisper. The server fills in who sent an addon message, so nobody can answer as someone else, and nothing is passed on.
+- If the crafter runs Trust Crafter and is online, their own Crafted for others log is asked about those orders: **confirmed** (same quality), **disputed** (a different quality) or **no record**. Your own orders are checked the same way.
+- Shared: outcome, quality asked for and received, time taken, order type, and tags and notes not marked private. Never tips, never outside your guild.
+- Off until you turn it on. *Confirm orders I crafted* is on: it only tells a customer the quality you delivered for their order, never who an order was for.
+
 **Works with CraftScan:** if you also use [CraftScan](https://www.curseforge.com/wow/addons/craftscan) to find customers in chat, hovering a customer in its orders window or its new request banner shows your history with them, so you know who you've crafted for before and how they tipped. Nothing changes if CraftScan isn't installed.
 
 **Export:** `/tc export` (or Export in the history window) gives you every order as CSV to paste into a spreadsheet, the ones you placed and the ones you crafted for others (the `side` column says which).
@@ -66,6 +77,7 @@ Orders you placed before installing TrustCrafter are added too, for as long as t
 | Command | What it does |
 |---|---|
 | `/tc` | Open or close your order history (or click the minimap button) |
+| `/tc options` | Open the options |
 | `/tc minimap` | Hide or show the minimap button |
 | `/tc lookup Name` | What you know about a crafter |
 | `/tc export` | Copy your orders as CSV for a spreadsheet |
@@ -76,10 +88,7 @@ Orders you placed before installing TrustCrafter are added too, for as long as t
 
 ## Coming next
 
-- **Guild sharing:** see how your guild's orders with a crafter went, with orders confirmed by both the customer and the crafter.
-- **Realm sharing:** ask other TrustCrafter users on your realm about a crafter, always labelled separately from what you and your guild know.
-
-Sharing will be off by default, and notes marked private never leave your computer.
+- **Realm sharing:** ask other TrustCrafter users on your realm about a crafter, always labelled separately from what you and your guild know. Off by default, like guild sharing.
 
 ## Installation
 
@@ -88,3 +97,5 @@ Install from CurseForge or Wago, or copy the `TrustCrafter` folder into `World o
 ## License
 
 MIT, see [LICENSE](LICENSE).
+
+Guild sharing uses these libraries, included under their own licenses: [AceComm-3.0 and CallbackHandler-1.0](https://www.wowace.com/projects/ace3) (Ace3, BSD), [ChatThrottleLib](https://www.wowace.com/projects/chatthrottlelib) (public domain), [LibStub](https://www.wowace.com/projects/libstub) (public domain), [LibSerialize](https://github.com/rossnichols/LibSerialize) (MIT) and [LibDeflate](https://github.com/SafeteeWoW/LibDeflate) (zlib).

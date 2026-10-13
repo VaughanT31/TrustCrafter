@@ -207,17 +207,39 @@ function Ledger:FindCrafter(input)
     return nil
 end
 
+local lookupWaiting
+
 ns:RegisterCommand("lookup", function(args)
     local L = ns.L
     if args == "" then
         Util.Print(L.LOOKUP_USAGE)
         return
     end
-    local crafter = Ledger:FindCrafter(args)
-    local s = crafter and Ledger:Summary(crafter)
-    if not s then
-        Util.Print(L.LOOKUP_NONE:format(args))
-        return
+    local crafter = Ledger:FindCrafter(args) or Util.FullName(args)
+    local s = Ledger:Summary(crafter)
+    local guild = ns.Sharing:Summary(crafter)
+    if s then
+        Util.Print(ns.Presence:ForCrafter(crafter) .. " " .. ns.Tooltip.SummaryLine(Util.ShortName(crafter), s))
     end
-    Util.Print(ns.Presence:ForCrafter(crafter) .. " " .. ns.Tooltip.SummaryLine(Util.ShortName(crafter), s))
+    if guild then Util.Print(Util.ShortName(crafter) .. ": " .. ns.Tooltip.GuildLine(guild)) end
+    if not s and not guild then Util.Print(L.LOOKUP_NONE:format(args)) end
+    -- Ask the guild too; replies print here when they arrive.
+    if ns.Sharing:Ask(crafter) then
+        lookupWaiting = crafter
+        Util.Print(L.LOOKUP_ASKED)
+    end
 end, ns.L.HELP_LOOKUP)
+
+-- The guild line for a /tc lookup, once replies have come in.
+local lookupTimer
+ns.Events:On("TC_SHARED_CHANGED", function(_, crafter)
+    if not lookupWaiting or crafter ~= lookupWaiting then return end
+    if lookupTimer then lookupTimer:Cancel() end
+    lookupTimer = C_Timer.NewTimer(2, function()
+        lookupTimer = nil
+        local waiting = lookupWaiting
+        lookupWaiting = nil
+        local guild = waiting and ns.Sharing:Summary(waiting)
+        if guild then Util.Print(Util.ShortName(waiting) .. ": " .. ns.Tooltip.GuildLine(guild)) end
+    end)
+end)

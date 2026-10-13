@@ -41,6 +41,11 @@ local function Locked()
     return false
 end
 
+-- Online dots can be turned off in the options; then nothing is asked.
+function Presence:Enabled()
+    return not ns.db or ns.db.settings.presence ~= false
+end
+
 -- Asks the game again, at most once every REQUEST_EVERY per crafter.
 local function Request(guid)
     if not (C_ChatInfo and C_ChatInfo.RequestCanLocalWhisperTarget) or Locked() then return end
@@ -109,6 +114,7 @@ end
 
 -- The dot as text, ready to put in front of a name.
 function Presence:Dot(guid, crafter, size)
+    if not self:Enabled() then return "" end
     local c = COLORS[self:Get(guid, crafter)]
     size = size or 8
     return DOT:format(size, size, c[1], c[2], c[3])
@@ -116,6 +122,7 @@ end
 
 -- Dot plus "Online" / "Offline" / "Status unknown", for detail lines.
 function Presence:Label(guid, crafter)
+    if not self:Enabled() then return "" end
     local s = self:Get(guid, crafter)
     local c = COLORS[s]
     return DOT:format(8, 8, c[1], c[2], c[3]) .. " " .. L["STATUS_" .. s:upper()]

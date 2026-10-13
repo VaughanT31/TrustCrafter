@@ -11,10 +11,10 @@ local L, Util, Skin = ns.L, ns.Util, ns.Skin
 local HistoryWindow = {}
 ns.HistoryWindow = HistoryWindow
 
-local WIDTH, HEIGHT = 780, 590
+local WIDTH, HEIGHT = 780, 620
 local PAD = 16
 local ROW_HEIGHT = 22
-local DETAIL_HEIGHT = 160
+local DETAIL_HEIGHT = 190
 local TABS_Y = -40
 local CONTROLS_Y = -74
 local HEADER_Y = -108
@@ -194,6 +194,7 @@ local function CreateRow(parent, index)
 
     row:SetScript("OnClick", function(self)
         state.selected = self.record and self.record.id
+        if self.record and self.record.crafter and not Crafting() then ns.Sharing:Ask(self.record.crafter) end
         HistoryWindow:Refresh()
     end)
     row:SetScript("OnEnter", function(self)
@@ -399,6 +400,8 @@ local function FactLines(record)
     if record.customer then Add(L.FACT_CUSTOMER, Util.ShortName(record.customer)) end
     Add(L.FACT_TYPE, L["TYPE_" .. (record.orderType or "PUBLIC")] or record.orderType or "-")
     Add(L.FACT_QUALITY, QualityLine(record))
+    local confirmed = ns.Sharing:Confirmation(record.id)
+    if confirmed then Add(L.FACT_CONFIRM, L["CONFIRM_" .. confirmed]) end
     if record.placedAt then
         Add(L.FACT_PLACED, date("%d %b %H:%M", record.placedAt) .. (record.placedApprox and (" " .. L.FACT_APPROX) or ""))
     end
@@ -408,6 +411,8 @@ local function FactLines(record)
     end
     Add(L.FACT_TURNAROUND, TimeText(record))
     Add(L.FACT_TIP, (record.tip or 0) > 0 and Util.FormatMoney(record.tip) or "-")
+    local guild = record.crafter and ns.Sharing:Summary(record.crafter)
+    if guild then Add(L.FACT_GUILD, ns.Tooltip.GuildLine(guild)) end
     return table.concat(lines, "\n")
 end
 
@@ -668,6 +673,8 @@ end
 
 ns.Events:On("TC_LEDGER_CHANGED", function() HistoryWindow:Refresh() end)
 ns.Events:On("TC_PRESENCE_CHANGED", function() HistoryWindow:Refresh() end)
+ns.Events:On("TC_SETTINGS_CHANGED", function() HistoryWindow:Refresh() end)
+ns.Events:On("TC_SHARED_CHANGED", function() HistoryWindow:Refresh() end)
 
 -- Item names arrive from the server a moment after they're first asked for.
 local namesTimer

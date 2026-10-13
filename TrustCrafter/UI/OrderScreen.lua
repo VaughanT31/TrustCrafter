@@ -17,6 +17,8 @@ local BADGE_MIXED = "Interface\\RaidFrame\\ReadyCheck-Waiting"
 local hooked = false
 local recipientBox, UpdateRecipient
 
+local ASK_DELAY = 1.5
+
 local function SummaryFor(name)
     if not name or name == "" or (issecretvalue and issecretvalue(name)) then return nil, nil end
     local crafter = ns.Ledger:FindCrafter(name)
@@ -34,14 +36,38 @@ local function HookRecipient(form)
     text:SetWidth(280)
     text:SetJustifyH("LEFT")
     text:SetWordWrap(false)
+    local askTimer
     UpdateRecipient = function()
         if not ns.db then return end
-        local s, crafter = SummaryFor(box:GetText())
-        text:SetText(s and ("|cff66ccffTrustCrafter:|r " .. ns.Presence:ForCrafter(crafter) .. " "
-            .. ns.Tooltip.SummaryLine(nil, s)) or "")
+        local s, crafter, guild = nil, nil, nil
+        local typed = box:GetText()
+        if ns.db.settings.orderScreen then
+            s, crafter = SummaryFor(typed)
+            if typed ~= "" and not (issecretvalue and issecretvalue(typed)) then
+                guild = ns.Sharing:Summary(crafter or Util.FullName(typed))
+            end
+        end
+        local parts = {}
+        if s then parts[#parts + 1] = ns.Presence:ForCrafter(crafter) .. " " .. ns.Tooltip.SummaryLine(nil, s) end
+        if guild then parts[#parts + 1] = ns.Tooltip.GuildLine(guild) end
+        text:SetText(#parts > 0 and ("|cff66ccffTrustCrafter:|r " .. table.concat(parts, "  |  ")) or "")
+    end
+    -- Asks the guild about the typed name once typing stops.
+    local function AskLater()
+        if askTimer then askTimer:Cancel() end
+        askTimer = C_Timer.NewTimer(ASK_DELAY, function()
+            askTimer = nil
+            local typed = box:GetText()
+            if typed and #typed >= 2 and not (issecretvalue and issecretvalue(typed)) and ns.db.settings.orderScreen then
+                ns.Sharing:Ask(ns.Ledger:FindCrafter(typed) or Util.FullName(typed))
+            end
+        end)
     end
     recipientBox = box
-    box:HookScript("OnTextChanged", UpdateRecipient)
+    box:HookScript("OnTextChanged", function()
+        UpdateRecipient()
+        AskLater()
+    end)
 end
 
 -- My Orders rows ----------------------------------------------------------
@@ -59,7 +85,7 @@ local function UpdateBadge(row)
         row.tcBadge:SetPoint("RIGHT", -4, 0)
     end
     local order = RowOrder(row)
-    local s = order and ns.db and SummaryFor(order.crafterName)
+    local s = order and ns.db and ns.db.settings.orderScreen and SummaryFor(order.crafterName)
     if s and s.filled > 0 then
         row.tcBadge:SetTexture(s.below == 0 and BADGE_GOOD or BADGE_MIXED)
         row.tcBadge:Show()
@@ -70,14 +96,23 @@ end
 
 local function OnRowEnter(row)
     local order = RowOrder(row)
-    local s = order and ns.db and ns.db.settings.tooltip and SummaryFor(order.crafterName)
-    if not s then return end
+    if not order or not ns.db or not ns.db.settings.orderScreen then return end
+    local s, known = SummaryFor(order.crafterName)
+    local crafter = known or (order.crafterName and not (issecretvalue and issecretvalue(order.crafterName))
+        and Util.FullName(order.crafterName))
+    if crafter then ns.Sharing:Ask(crafter) end
+    local guild = crafter and ns.Sharing:Summary(crafter)
+    if not ns.db.settings.tooltip or not (s or guild) then return end
     if not GameTooltip:IsOwned(row) then GameTooltip:SetOwner(row, "ANCHOR_RIGHT") end
     GameTooltip:AddLine(" ")
-    local crafter = Util.FullName(order.crafterName)
-    GameTooltip:AddLine("|cff66ccffTrustCrafter:|r " .. Util.ShortName(crafter)
-        .. ": " .. ns.Tooltip.SummaryLine(nil, s), 1, 1, 1, true)
-    GameTooltip:AddLine(ns.Presence:Label(order.crafterGuid or ns.Presence:GuidFor(crafter), crafter), 1, 1, 1)
+    local head = "|cff66ccffTrustCrafter:|r " .. Util.ShortName(crafter) .. ": "
+    if s then
+        GameTooltip:AddLine(head .. ns.Tooltip.SummaryLine(nil, s), 1, 1, 1, true)
+        head = ""
+    end
+    if guild then GameTooltip:AddLine(head .. ns.Tooltip.GuildLine(guild), 1, 1, 1, true) end
+    local presence = ns.Presence:Label(order.crafterGuid or ns.Presence:GuidFor(crafter), crafter)
+    if presence ~= "" then GameTooltip:AddLine(presence, 1, 1, 1) end
     GameTooltip:Show()
 end
 
@@ -104,9 +139,12 @@ ns.Events:On("ADDON_LOADED", function(_, name)
     if name == BLIZZARD_ADDON then Hook() end
 end)
 
-ns.Events:On("TC_PRESENCE_CHANGED", function()
+local function RefreshRecipient()
     if recipientBox and recipientBox:IsVisible() then UpdateRecipient() end
-end)
+end
+ns.Events:On("TC_PRESENCE_CHANGED", RefreshRecipient)
+ns.Events:On("TC_SETTINGS_CHANGED", RefreshRecipient)
+ns.Events:On("TC_SHARED_CHANGED", RefreshRecipient)
 
 ns.Events:On("TC_LOGIN", function()
     local loaded = C_AddOns and C_AddOns.IsAddOnLoaded and C_AddOns.IsAddOnLoaded(BLIZZARD_ADDON)

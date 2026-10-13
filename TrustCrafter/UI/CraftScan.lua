@@ -2,7 +2,8 @@
 -- when CraftScan is installed:
 --   TrustCrafter: you crafted 3x for them  |  150g in tips
 -- Shown under the chat history when hovering a customer in CraftScan's
--- orders window, and when hovering its new request banner.
+-- orders window, and when hovering its new request banner. Turned off with
+-- the "In CraftScan" option.
 --
 -- CraftScan has no API for this, so we hook what it exposes globally: the
 -- order row mixin, the scanner menu frame and its banner button. Every name
@@ -22,7 +23,7 @@ local bannerOrder
 -- Adds the history lines to a CraftScan tooltip. Returns true when added.
 function CraftScanHook.AddTo(tooltip, customer)
     if not tooltip or not tooltip:IsShown() then return false end
-    if not ns.db or not ns.db.settings.tooltip then return false end
+    if not ns.db or not ns.db.settings.craftScan then return false end
     if type(customer) ~= "string" or (issecretvalue and issecretvalue(customer)) then return false end
     local fullName = ns.Util.FullName(customer)
     if not fullName or not ns.Tooltip.HasHistory(fullName) then return false end

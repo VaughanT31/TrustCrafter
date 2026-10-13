@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.0.0
+
+- **Guild sharing:** turn on "Share with my guild" in the options and when you look a crafter up (the history window, `/tc lookup`, the personal order name box or a My Orders row), Trust Crafter asks your guild how their orders with that crafter went. Guild members' answers show beside your own, counted by people, not orders: *Guild: 7 orders from 3 people | 6/7 met or exceeded*. Works for crafters you've never used yourself.
+- **Checked against the crafter's own log:** if the crafter runs Trust Crafter and is online, their Crafted for others log is asked about those orders. Each one is marked **confirmed** (same quality), **disputed** (a different quality) or **no record**. Your own orders get checked too, shown as "Crafter's log" in the history window.
+- **What's shared:** outcome, quality asked for and received, time taken, order type, and tags and notes not marked private. Never the tip, never anything outside your guild. Answers come straight from whoever wrote them; nothing is passed on.
+- Sharing is **off until you turn it on**. "Confirm orders I crafted" is on: it only ever tells a customer the quality you delivered for an order, never who it was for.
+- Pauses during raid encounters and Mythic+ runs, when addon messages are locked, and catches up afterwards.
+- "Forget guild reviews" in the options deletes everything your guild has shared with you.
+
+## 1.4.0
+
+- **Your customers on the crafting orders window:** when you browse public, guild or personal orders as a crafter, a tick marks customers you've crafted for before. Hover the order for how many times and how much they tipped, and open it to see the same beside their name.
+- **Options page** in Esc > Options > AddOns (or `/tc options`): the tooltip line, online dots, minimap button, the crafting orders window and CraftScan lines, Export, Delete history and the debug log.
+- **Online dots can be turned off.** With them off, Trust Crafter doesn't ask the game whether crafters are online at all.
+
 ## 1.3.0
 
 - **Works with CraftScan:** if you use CraftScan to find crafting customers in chat, hovering a customer in its orders window or its new request banner now shows your Trust Crafter history with them: how many times you've crafted for them and how much they tipped, and how their orders went if they've crafted for you. Nothing changes if CraftScan isn't installed, and the line follows the existing tooltip setting.

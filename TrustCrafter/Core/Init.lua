@@ -12,6 +12,9 @@
 --     crafted = { [orderID] = record, ... }   orders you filled for others,
 --                                              see Data/Crafted.lua
 --     claims  = { [orderID] = time, ... }     orders you took, until filled
+--     shared  = { [crafter] = { [author] = { at, o } } }  what guild members
+--                                              shared, see Data/Sharing.lua
+--     confirm = { [orderID] = { s, q, at } }   what crafters' logs said
 --   }
 
 local ADDON_NAME, ns = ...
@@ -23,6 +26,18 @@ local DEFAULTS = {
     version = DB_VERSION,
     settings = {
         tooltip = true,
+        -- Online dots beside crafters (Data/Presence.lua).
+        presence = true,
+        -- Your history on Blizzard's crafting orders window, both sides
+        -- (UI/OrderScreen.lua, UI/CrafterOrders.lua).
+        orderScreen = true,
+        -- Your history in CraftScan's tooltips (UI/CraftScan.lua).
+        craftScan = true,
+        -- Guild sharing (Data/Sharing.lua): off until the player turns it
+        -- on. Confirming orders you crafted only ever tells a customer
+        -- about their own order, so it's on.
+        share = false,
+        confirm = true,
         debug = false,
         minimapHide = false,
         minimapAngle = 220,
@@ -65,6 +80,9 @@ function ns:RealmData(realm)
     -- filled yet (Data/Crafted.lua).
     data.crafted = data.crafted or {}
     data.claims = data.claims or {}
+    -- Guild sharing (Data/Sharing.lua).
+    data.shared = data.shared or {}
+    data.confirm = data.confirm or {}
     return data
 end
 

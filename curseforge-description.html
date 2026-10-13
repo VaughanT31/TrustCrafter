@@ -6,6 +6,7 @@
 <li><strong>Online dot:</strong> see whether a crafter you trust is online right now.</li>
 <li><strong>Crafted for others:</strong> crafters get a log of every order they fill, with craft times and tips.</li>
 <li><strong>Works with CraftScan:</strong> your history with a customer, right in CraftScan's tooltips.</li>
+<li><strong>New: guild sharing:</strong> see how your guild's orders with a crafter went, checked against the crafter's own log.</li>
 </ul>
 <p>No typing and no setup. Place orders as usual and Trust Crafter fills itself in.</p>
 
@@ -18,6 +19,7 @@
 <li><strong>Tooltip:</strong> hover a player you've used as a crafter to see <em>crafted 4x for you | 4/4 met or exceeded | avg 38 min</em>.</li>
 <li><strong>Crafting orders window:</strong> type a crafter's name for a personal order and your history with them shows beside it. In My Orders, a tick marks crafters you've used before, yellow if any order came in below what you asked for.</li>
 <li><strong>Right-click menu</strong> on a player's name in chat, the friends list, your guild or a unit frame opens your history with that crafter.</li>
+<li><strong>New: when you craft:</strong> browsing orders as a crafter, a tick marks customers you've crafted for before, with how many times and their tips on hover and beside their name in the order.</li>
 </ul>
 
 <p><span style="color: #ffd100;"><strong>Is the Crafter Online?</strong></span><br>A dot beside each crafter: green when they're online, red when the game says they're offline, grey when it can't tell. It uses the game's own whisper check plus your friends list, group and Battle.net friends, and sends nothing to the crafter. Shown in the history window, the order details, the personal order name box, the My Orders tooltip and <code>/tc lookup</code>.</p>
@@ -26,7 +28,16 @@
 
 <p><span style="color: #ffd100;"><strong>New: Crafted for Others</strong></span><br>Crafting for other players? The second tab of the history window logs every order you fill: who it was for, the quality you delivered against what they asked for, your craft time from taking the order to filling it, and the tip. The top of the list adds up your orders, customers and tips. Hover a player you've crafted for and the tooltip says <em>you crafted 3x for them | 45g in tips</em>. Orders from your own characters and NPC (patron) orders aren't counted here.</p>
 
-<p><span style="color: #ffd100;"><strong>New: Works With CraftScan</strong></span><br>Use <a href="https://www.curseforge.com/wow/addons/craftscan">CraftScan</a> to find customers in chat? Hover a customer in its orders window or its new request banner and Trust Crafter adds your history with them under the chat: <em>you crafted 3x for them | 150g in tips</em>. You know straight away who you've crafted for before and who tips well, before you answer. Nothing changes if CraftScan isn't installed.</p>
+<p><span style="color: #ffd100;"><strong>New in 2.0: Guild Sharing You Can Check</strong></span><br>Turn on <strong>Share with my guild</strong> in the options, and when you look a crafter up, Trust Crafter asks your guild how their orders with them went, even for a crafter you've never used: <em>Guild: 7 orders from 3 people | 6/7 met or exceeded | 5 confirmed</em>. Answers come straight from whoever wrote them, and nothing is passed on.</p>
+<p>If the crafter runs Trust Crafter too, their own log of the orders they filled is asked about each one:</p>
+<ul>
+<li><strong>Confirmed:</strong> the crafter's log says the same quality.</li>
+<li><strong>Disputed:</strong> the crafter's log says a different quality.</li>
+<li><strong>No record:</strong> the crafter has no record of that order.</li>
+</ul>
+<p>Shared: outcome, quality asked for and received, time taken, order type, and tags and notes not marked private. Never tips, never outside your guild. Off until you turn it on, and it pauses during raid encounters and Mythic+ runs. A fake bad review against a crafter who runs Trust Crafter shows up as no record, so honest crafters have every reason to install it.</p>
+
+<p><span style="color: #ffd100;"><strong>Works With CraftScan</strong></span><br>Use <a href="https://www.curseforge.com/wow/addons/craftscan">CraftScan</a> to find customers in chat? Hover a customer in its orders window or its new request banner and Trust Crafter adds your history with them under the chat: <em>you crafted 3x for them | 150g in tips</em>. You know straight away who you've crafted for before and who tips well, before you answer. Nothing changes if CraftScan isn't installed.</p>
 
 <p><span style="color: #ffd100;"><strong>Notes and Tags</strong></span><br>Add a short note and tags like <em>Fast</em>, <em>Friendly</em>, <em>Own mats</em>, <em>Would again</em> or <em>Slow</em> to your own orders. Your words sit next to the facts, never on top of them.</p>
 
@@ -44,12 +55,13 @@
 <li><code>/tc lookup Name</code>: what you know about a crafter</li>
 <li><code>/tc export</code>: copy your orders as CSV</li>
 <li><code>/tc tooltip</code>: turn the tooltip line on or off</li>
+<li><code>/tc options</code>: the options page (also in Esc > Options > AddOns)</li>
 <li><code>/tc minimap</code>: hide or show the minimap button</li>
 <li><code>/tc wipe</code>: delete your history on this realm (asks first)</li>
 <li><code>/tc help</code>: every command</li>
 </ul>
 
-<p><span style="color: #ffd100;"><strong>Coming Next</strong></span><br><strong>Guild sharing</strong> in 2.0: see how your guild's orders with a crafter went, with orders confirmed by both the customer and the crafter. The crafted log in 1.2 is the crafter's side of that confirmation. Then <strong>realm sharing</strong> in 3.0: ask other Trust Crafter users on your realm about a crafter, always labelled separately from what you and your guild know. Sharing will be off by default, and notes marked private never leave your computer.</p>
+<p><span style="color: #ffd100;"><strong>Coming Next</strong></span><br><strong>Realm sharing</strong> in 3.0: ask other Trust Crafter users on your realm about a crafter, always labelled separately from what you and your guild know. Off by default, like guild sharing, and notes marked private never leave your computer.</p>
 
 <p><span style="color: #ffd100;"><strong>Good to Know</strong></span></p>
 <ul>
