@@ -1,4 +1,4 @@
-## Interface: 120100
+## Interface: 121500
 ## Title: TrustCrafter
 ## Notes: Remembers who crafted your orders, what you asked for and what you got.
 ## Author: CtrlShift_Zed
