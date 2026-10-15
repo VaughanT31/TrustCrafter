@@ -413,6 +413,8 @@ local function FactLines(record)
     Add(L.FACT_TIP, (record.tip or 0) > 0 and Util.FormatMoney(record.tip) or "-")
     local guild = record.crafter and ns.Sharing:Summary(record.crafter)
     if guild then Add(L.FACT_GUILD, ns.Tooltip.GuildLine(guild)) end
+    local realm = record.crafter and ns.Sharing:Summary(record.crafter, "realm")
+    if realm then Add(L.FACT_REALM, ns.Tooltip.RealmLine(realm)) end
     return table.concat(lines, "\n")
 end
 

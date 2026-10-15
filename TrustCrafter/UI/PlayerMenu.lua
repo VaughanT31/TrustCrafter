@@ -28,14 +28,32 @@ end
 
 local function AddToMenu(_, rootDescription, contextData)
     if not ns.db then return end
-    local crafter = ns.Ledger:FindCrafter(NameFrom(contextData))
+    local name = NameFrom(contextData)
+    local crafter = ns.Ledger:FindCrafter(name)
     local s = crafter and ns.Ledger:Summary(crafter)
-    if not s then return end
+    -- Realm reviewers can be ignored (or shown again) from here (3.0).
+    local realmData = name and ns:RealmData()
+    local ignored = realmData and realmData.ignored and realmData.ignored[name]
+    local reviewer = name and ns.Sharing and ns.Sharing.IsRealmReviewer and (ignored or ns.Sharing:IsRealmReviewer(name))
+    if not s and not reviewer then return end
     rootDescription:CreateDivider()
     rootDescription:CreateTitle(L.WINDOW_TITLE)
-    rootDescription:CreateButton(ns.Tooltip.SummaryLine(nil, s), function()
-        ns.HistoryWindow:ShowCrafter(crafter)
-    end)
+    if s then
+        rootDescription:CreateButton(ns.Tooltip.SummaryLine(nil, s), function()
+            ns.HistoryWindow:ShowCrafter(crafter)
+        end)
+    end
+    if reviewer then
+        rootDescription:CreateButton(ignored and L.MENU_UNIGNORE or L.MENU_IGNORE, function()
+            if ignored then
+                ns.Sharing:Unignore(name)
+                Util.Print(L.UNIGNORED:format(name))
+            else
+                ns.Sharing:Ignore(name)
+                Util.Print(L.IGNORED:format(name))
+            end
+        end)
+    end
 end
 
 if Menu and Menu.ModifyMenu then

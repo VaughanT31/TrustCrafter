@@ -74,6 +74,13 @@ local function Build()
     Checkbox("confirm", L.OPT_CONFIRM, L.OPT_CONFIRM_TIP, true)
     Button(L.OPT_FORGET, L.OPT_FORGET_BUTTON, function() ns.Sharing:ForgetShared() end, L.OPT_FORGET_TIP)
 
+    Header(L.OPT_REALM_SHARING)
+    Checkbox("realmShare", L.OPT_REALM_SHARE, L.OPT_REALM_SHARE_TIP, false, function(on)
+        if on then Util.Print(L.REALM_ON) else Util.Print(L.REALM_OFF) end
+        ns.Channel:Update()
+    end)
+    Button(L.OPT_FORGET_REALM, L.OPT_FORGET_BUTTON, function() ns.Sharing:ForgetRealm() end, L.OPT_FORGET_REALM_TIP)
+
     Header(L.OPT_DATA)
     Button(L.OPT_EXPORT, L.EXPORT_BUTTON, function() ns.ExportWindow:Show() end, L.OPT_EXPORT_TIP)
     Button(L.OPT_WIPE, L.OPT_WIPE_BUTTON, function()

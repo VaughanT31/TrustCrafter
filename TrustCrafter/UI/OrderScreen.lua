@@ -39,17 +39,19 @@ local function HookRecipient(form)
     local askTimer
     UpdateRecipient = function()
         if not ns.db then return end
-        local s, crafter, guild = nil, nil, nil
+        local s, crafter, guild, realm = nil, nil, nil, nil
         local typed = box:GetText()
         if ns.db.settings.orderScreen then
             s, crafter = SummaryFor(typed)
             if typed ~= "" and not (issecretvalue and issecretvalue(typed)) then
                 guild = ns.Sharing:Summary(crafter or Util.FullName(typed))
+                realm = ns.Sharing:Summary(crafter or Util.FullName(typed), "realm")
             end
         end
         local parts = {}
         if s then parts[#parts + 1] = ns.Presence:ForCrafter(crafter) .. " " .. ns.Tooltip.SummaryLine(nil, s) end
         if guild then parts[#parts + 1] = ns.Tooltip.GuildLine(guild) end
+        if realm then parts[#parts + 1] = ns.Tooltip.RealmLine(realm) end
         text:SetText(#parts > 0 and ("|cff66ccffTrustCrafter:|r " .. table.concat(parts, "  |  ")) or "")
     end
     -- Asks the guild about the typed name once typing stops.
@@ -102,7 +104,8 @@ local function OnRowEnter(row)
         and Util.FullName(order.crafterName))
     if crafter then ns.Sharing:Ask(crafter) end
     local guild = crafter and ns.Sharing:Summary(crafter)
-    if not ns.db.settings.tooltip or not (s or guild) then return end
+    local realm = crafter and ns.Sharing:Summary(crafter, "realm")
+    if not ns.db.settings.tooltip or not (s or guild or realm) then return end
     if not GameTooltip:IsOwned(row) then GameTooltip:SetOwner(row, "ANCHOR_RIGHT") end
     GameTooltip:AddLine(" ")
     local head = "|cff66ccffTrustCrafter:|r " .. Util.ShortName(crafter) .. ": "
@@ -110,7 +113,11 @@ local function OnRowEnter(row)
         GameTooltip:AddLine(head .. ns.Tooltip.SummaryLine(nil, s), 1, 1, 1, true)
         head = ""
     end
-    if guild then GameTooltip:AddLine(head .. ns.Tooltip.GuildLine(guild), 1, 1, 1, true) end
+    if guild then
+        GameTooltip:AddLine(head .. ns.Tooltip.GuildLine(guild), 1, 1, 1, true)
+        head = ""
+    end
+    if realm then GameTooltip:AddLine(head .. ns.Tooltip.RealmLine(realm), 1, 1, 1, true) end
     local presence = ns.Presence:Label(order.crafterGuid or ns.Presence:GuidFor(crafter), crafter)
     if presence ~= "" then GameTooltip:AddLine(presence, 1, 1, 1) end
     GameTooltip:Show()

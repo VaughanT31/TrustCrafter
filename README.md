@@ -83,12 +83,21 @@ Orders you placed before installing TrustCrafter are added too, for as long as t
 | `/tc export` | Copy your orders as CSV for a spreadsheet |
 | `/tc tooltip` | Turn the tooltip line on or off |
 | `/tc wipe` | Delete your history on this realm (asks first) |
+| `/tc realm` | Whether realm sharing is connected |
+| `/tc ignore Name-Realm` | Ignore a player's realm reviews (`/tc unignore` to undo) |
 | `/tc debug` | Log crafting order events to chat, for bug reports |
 | `/tc help` | List commands |
 
-## Coming next
+## Realm sharing (3.0)
 
-- **Realm sharing:** ask other TrustCrafter users on your realm about a crafter, always labelled separately from what you and your guild know. Off by default, like guild sharing.
+Turn on **Share on my realm** in the options and TrustCrafter also asks other TrustCrafter users on your realm about a crafter. It uses a hidden channel: joined a minute after login as a temporary channel, removed from every chat tab, and used only for addon messages. Questions go on the channel; answers come back by whisper from whoever wrote them, so nothing is relayed.
+
+- Realm answers are their own tier, **Realm (unverified)**, never mixed into your own or your guild's numbers. Guild members who answer still count as guild.
+- At most 20 orders per person per crafter, and 5 from the last week; counted by people, not orders.
+- Right-click a reviewer, or `/tc ignore Name-Realm`, to ignore their reviews.
+- Realm answers are forgotten after 60 days. "Forget realm reviews" in the options deletes them all.
+- The channel takes one of your 10 chat channel slots. If it's locked or you're removed from it, a backup channel is used. `/tc realm` shows the status.
+- Separate from guild sharing, and off by default.
 
 ## Installation
 

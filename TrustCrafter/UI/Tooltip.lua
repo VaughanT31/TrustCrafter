@@ -49,9 +49,16 @@ function Tooltip.GuildLine(g)
     return table.concat(parts, "  |  ")
 end
 
+-- "Realm (unverified): 4 orders from 2 people  |  4/4 met or exceeded", greyer
+-- than the guild line.
+function Tooltip.RealmLine(r)
+    local line = Tooltip.GuildLine(r)
+    return "|cffaaaaaa" .. L.TIP_REALM:format(r.orders, r.people) .. "|r" .. line:sub(#L.TIP_GUILD:format(r.orders, r.people) + 1)
+end
+
 function Tooltip.HasHistory(fullName)
     return ns.Ledger:Summary(fullName) ~= nil or ns.Crafted:Summary(fullName) ~= nil
-        or ns.Sharing:Summary(fullName) ~= nil
+        or ns.Sharing:Summary(fullName) ~= nil or ns.Sharing:Summary(fullName, "realm") ~= nil
 end
 
 -- Adds both sides of your history with a player ("Name-Realm") to a
@@ -61,7 +68,8 @@ function Tooltip.AddHistory(tooltip, fullName)
     local s = ns.Ledger:Summary(fullName)
     local crafted = ns.Crafted:Summary(fullName)
     local guild = ns.Sharing:Summary(fullName)
-    if not s and not crafted and not guild then return false end
+    local realm = ns.Sharing:Summary(fullName, "realm")
+    if not s and not crafted and not guild and not realm then return false end
     local first = true
     local function Add(line)
         tooltip:AddLine(first and ("|cff66ccffTrustCrafter:|r " .. line) or line, 1, 1, 1, true)
@@ -70,6 +78,7 @@ function Tooltip.AddHistory(tooltip, fullName)
     if s then Add(Tooltip.SummaryLine(nil, s)) end
     if crafted then Add(Tooltip.CraftedLine(crafted)) end
     if guild then Add(Tooltip.GuildLine(guild)) end
+    if realm then Add(Tooltip.RealmLine(realm)) end
     return true
 end
 

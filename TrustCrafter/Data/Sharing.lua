@@ -19,12 +19,22 @@
 --        (nothing)   one-sided: the crafter didn't answer
 --      Your own orders with Thalric are checked the same way.
 --
--- Sharing is off by default (settings.share). Confirming is on by default
--- (settings.confirm): it only tells a customer about their own order, or
--- repeats a fact a guild member already shared.
+-- Realm sharing (3.0, settings.realmShare): the same question also goes out
+-- on the hidden realm channel (Data/Channel.lua), and anyone there with
+-- orders from the crafter whispers back. Realm answers are their own tier,
+-- "Realm (unverified)", never mixed into the guild's numbers: at most 20
+-- orders and 5 from the last week per person per crafter, kept 60 days,
+-- and anyone can be ignored. Guild members who answer on the channel still
+-- count as guild.
+--
+-- Sharing is off by default (settings.share, settings.realmShare). Confirming
+-- is on by default (settings.confirm): it only tells a customer about their
+-- own order, or repeats a fact someone already shared.
 --
 -- Kept per realm:
---   shared[crafter][author] = { at, o = { [orderID] = fact, ... } }
+--   shared[crafter][author] = { at, o = { [orderID] = fact, ... } }       guild
+--   sharedRealm[crafter][author] = { at, o = { ... } }                   realm
+--   ignored[author] = true                                    realm answers dropped
 --   confirm[orderID] = { s = status, q = quality in the crafter's log, at }
 
 local _, ns = ...
@@ -43,6 +53,17 @@ local NOTE_MAX = 200
 
 local ANSWER_EVERY = 60             -- per person asking a crafter to confirm
 
+-- Realm channel limits (3.0).
+local REALM_ASKS_PER_HOUR = 20      -- questions you send on the channel
+local REALM_ANSWERS_PER_MINUTE = 10 -- questions from the channel you answer
+local REALM_ANSWER_DELAY = 3        -- up to this many seconds, so replies spread out
+local REALM_MAX_FACTS = 20          -- orders kept per person per crafter
+local REALM_MAX_WEEK = 5            -- of those, from the last 7 days
+local REALM_KEEP = 60 * 86400       -- realm answers are forgotten after this
+
+local realmAsks = {}                -- times of our channel questions
+local realmAnswers = {}             -- times we answered channel questions
+
 local askedAt = {}                  -- crafter -> time
 local answeredAt = {}               -- person -> time
 local confirmAskedAt = {}           -- crafter -> time
@@ -52,8 +73,24 @@ local nextID = 0
 
 local function Settings() return ns.db and ns.db.settings or {} end
 
-function Sharing:Enabled()
+function Sharing:GuildEnabled()
     return Settings().share == true and ns.Comm:Available()
+end
+
+function Sharing:RealmEnabled()
+    return Settings().realmShare == true and ns.Comm:Available() and ns.Channel:Number() ~= nil
+end
+
+function Sharing:Enabled()
+    return self:GuildEnabled() or self:RealmEnabled()
+end
+
+-- Drops times older than `window` and says whether another fits under max.
+local function UnderLimit(times, window, max, now)
+    for i = #times, 1, -1 do
+        if now - times[i] >= window then table.remove(times, i) end
+    end
+    return #times < max
 end
 
 local function InGuild()
@@ -70,6 +107,17 @@ local function IsGuildMember(fullName)
         if ok and exists ~= nil then return exists end
     end
     return true
+end
+
+-- The same check, but "can't tell" means no: a realm answer only counts as
+-- guild when the game says so.
+local function IsKnownGuildMember(fullName)
+    if not (IsInGuild and IsInGuild()) or not (C_GuildInfo and C_GuildInfo.MemberExistsByName) then return false end
+    for _, name in ipairs({ fullName, Util.ShortName(fullName) }) do
+        local ok, exists = pcall(C_GuildInfo.MemberExistsByName, name)
+        if ok and exists then return true end
+    end
+    return false
 end
 
 local function Realm() return ns:RealmData() end
@@ -97,7 +145,8 @@ end
 
 -- Your filled orders from a crafter, newest first, as { [orderID] = fact }.
 -- Orders one of your own characters crafted are never shared.
-function Sharing:MyFacts(crafter)
+function Sharing:MyFacts(crafter, max)
+    max = max or MAX_FACTS
     local list = {}
     for id, record in pairs(Realm().orders) do
         if record.crafter == crafter and record.state == "FILLED" and not record.ownCraft
@@ -107,7 +156,7 @@ function Sharing:MyFacts(crafter)
     end
     table.sort(list, function(a, b) return (a.record.completedAt or 0) > (b.record.completedAt or 0) end)
     local facts, count = {}, 0
-    for i = 1, math.min(#list, MAX_FACTS) do
+    for i = 1, math.min(#list, max) do
         facts[list[i].id] = Sharing.Fact(list[i].record)
         count = count + 1
     end
@@ -156,11 +205,18 @@ function Sharing:Ask(crafter, now)
     now = now or Util.Now()
     if askedAt[crafter] and now - askedAt[crafter] < ASK_EVERY then return false end
     askedAt[crafter] = now
-    if InGuild() then
+    if InGuild() and self:GuildEnabled() then
         nextID = nextID + 1
         local id = tostring(nextID) .. "-" .. tostring(now)
         pending[id] = { crafter = crafter, at = now }
         ns.Comm:Send("ask", { id = id, c = crafter }, "GUILD")
+    end
+    if self:RealmEnabled() and UnderLimit(realmAsks, 3600, REALM_ASKS_PER_HOUR, now) then
+        realmAsks[#realmAsks + 1] = now
+        nextID = nextID + 1
+        local id = tostring(nextID) .. "-" .. tostring(now) .. "r"
+        pending[id] = { crafter = crafter, at = now, realm = true }
+        ns.Comm:Send("ask", { id = id, c = crafter }, "CHANNEL", ns.Channel:Number())
     end
     -- Your own orders get checked against the crafter's log either way.
     ScheduleConfirm(crafter)
@@ -180,8 +236,10 @@ function Sharing:Unconfirmed(crafter)
     end
     local mine = self:MyFacts(crafter)
     for id in pairs(mine) do Add(id) end
-    for _, entry in pairs(Realm().shared[crafter] or {}) do
-        for id in pairs(entry.o) do Add(id) end
+    for _, store in ipairs({ Realm().shared, Realm().sharedRealm }) do
+        for _, entry in pairs(store[crafter] or {}) do
+            for id in pairs(entry.o) do Add(id) end
+        end
     end
     table.sort(ids)
     return ids
@@ -203,16 +261,53 @@ end
 
 -- Answering ------------------------------------------------------------------
 
--- Someone in your guild asks about a crafter: whisper back your facts.
+-- Someone in your guild, or on the realm channel, asks about a crafter:
+-- whisper back your facts. Channel questions are answered at most
+-- REALM_ANSWERS_PER_MINUTE a minute, after a short random wait so a dozen
+-- replies don't all land at once.
 ns.Comm:On("ask", function(p, sender, channel)
-    if channel ~= "GUILD" or not Sharing:Enabled() or type(p) ~= "table" then return end
-    if type(p.c) ~= "string" or type(p.id) ~= "string" then return end
+    if type(p) ~= "table" or type(p.c) ~= "string" or type(p.id) ~= "string" then return end
+    local fromChannel = channel == "CHANNEL"
+    if fromChannel then
+        if not Sharing:RealmEnabled() then return end
+    elseif channel ~= "GUILD" or not Sharing:GuildEnabled() then
+        return
+    end
     local crafter = Util.FullName(p.c)
     if not crafter or crafter == sender then return end
-    local facts, count = Sharing:MyFacts(crafter)
+    local facts, count = Sharing:MyFacts(crafter, fromChannel and REALM_MAX_FACTS or MAX_FACTS)
     if count == 0 then return end
-    ns.Comm:Send("rep", { id = p.id, c = crafter, o = facts }, "WHISPER", sender)
+    local reply = { id = p.id, c = crafter, o = facts }
+    if not fromChannel then
+        ns.Comm:Send("rep", reply, "WHISPER", sender)
+        return
+    end
+    local now = Util.Now()
+    if not UnderLimit(realmAnswers, 60, REALM_ANSWERS_PER_MINUTE, now) then return end
+    realmAnswers[#realmAnswers + 1] = now
+    C_Timer.After(math.random() * REALM_ANSWER_DELAY, function()
+        ns.Comm:Send("rep", reply, "WHISPER", sender)
+    end)
 end)
+
+-- A realm answer, trimmed to the limits: newest first, at most
+-- REALM_MAX_FACTS, and at most REALM_MAX_WEEK from the last 7 days.
+local function TrimRealmFacts(facts, now)
+    local list = {}
+    for id, fact in pairs(facts) do list[#list + 1] = { id = id, fact = fact } end
+    table.sort(list, function(a, b) return (a.fact.at or 0) > (b.fact.at or 0) end)
+    local kept, week = {}, 0
+    for i = 1, math.min(#list, REALM_MAX_FACTS) do
+        local item = list[i]
+        local recent = item.fact.at and now - item.fact.at < 7 * 86400
+        if not recent or week < REALM_MAX_WEEK then
+            if recent then week = week + 1 end
+            kept[item.id] = item.fact
+        end
+    end
+    return kept
+end
+Sharing.TrimRealmFacts = TrimRealmFacts
 
 -- A reply to one of our questions.
 ns.Comm:On("rep", function(p, sender, channel)
@@ -220,7 +315,18 @@ ns.Comm:On("rep", function(p, sender, channel)
     local request = type(p.id) == "string" and pending[p.id]
     if not request or Util.Now() - request.at > ASK_TIMEOUT then return end
     if Util.FullName(p.c) ~= request.crafter or sender == request.crafter then return end
-    if not IsGuildMember(sender) or type(p.o) ~= "table" then return end
+    if type(p.o) ~= "table" then return end
+    -- A reply to a guild question must come from the guild (as in 2.0). A
+    -- reply to a channel question counts as guild only when the game says
+    -- they're in your guild; otherwise it's a realm answer.
+    local guild
+    if request.realm then
+        guild = IsKnownGuildMember(sender)
+        if not guild and Realm().ignored[sender] then return end
+    else
+        if not IsGuildMember(sender) then return end
+        guild = true
+    end
     local facts, count = {}, 0
     for id, fact in pairs(p.o) do
         local clean = type(id) == "string" and id:match("^%d+$") and Sharing.CleanFact(fact)
@@ -230,9 +336,13 @@ ns.Comm:On("rep", function(p, sender, channel)
         end
     end
     if count == 0 then return end
-    local shared = Realm().shared
-    shared[request.crafter] = shared[request.crafter] or {}
-    shared[request.crafter][sender] = { at = Util.Now(), o = facts }
+    local store = Realm().shared
+    if not guild then
+        store = Realm().sharedRealm
+        facts = TrimRealmFacts(facts, Util.Now())
+    end
+    store[request.crafter] = store[request.crafter] or {}
+    store[request.crafter][sender] = { at = Util.Now(), o = facts }
     ns.Events:Fire("TC_SHARED_CHANGED", request.crafter)
     ScheduleConfirm(request.crafter)
 end)
@@ -272,10 +382,12 @@ ns.Comm:On("cfa", function(p, sender, channel)
     local expected = {}
     local mine = Sharing:MyFacts(crafter)
     for id, fact in pairs(mine) do expected[id] = { fact } end
-    for _, entry in pairs(Realm().shared[crafter] or {}) do
-        for id, fact in pairs(entry.o) do
-            expected[id] = expected[id] or {}
-            expected[id][#expected[id] + 1] = fact
+    for _, store in ipairs({ Realm().shared, Realm().sharedRealm }) do
+        for _, entry in pairs(store[crafter] or {}) do
+            for id, fact in pairs(entry.o) do
+                expected[id] = expected[id] or {}
+                expected[id][#expected[id] + 1] = fact
+            end
         end
     end
     for id, quality in pairs(type(p.k) == "table" and p.k or {}) do
@@ -300,17 +412,21 @@ function Sharing:Confirmation(orderID)
     return c and c.s or nil
 end
 
--- What your guild shared about a crafter, counted by people, not orders:
+-- What your guild (or, with tier "realm", the realm channel) shared about a
+-- crafter, counted by people, not orders:
 -- { people, orders, metOrBetter, below, confirmed, disputed, avgTurnaround }
--- or nil. Your own orders aren't included; they're shown as yours.
-function Sharing:Summary(crafter)
-    local entries = ns.db and Realm().shared[crafter]
+-- or nil. Your own orders aren't included; they're shown as yours. Realm
+-- answers from people you've ignored are left out.
+function Sharing:Summary(crafter, tier)
+    local realmTier = tier == "realm"
+    local entries = ns.db and (realmTier and Realm().sharedRealm or Realm().shared)[crafter]
     if not entries then return nil end
+    local ignored = realmTier and Realm().ignored or {}
     local s = { people = 0, orders = 0, metOrBetter = 0, below = 0, confirmed = 0, disputed = 0 }
     local timeSum, timeCount = 0, 0
     local confirm = Realm().confirm
     for author, entry in pairs(entries) do
-        if not ns.Ledger:IsMine(author) and next(entry.o) then
+        if not ns.Ledger:IsMine(author) and not ignored[author] and next(entry.o) then
             s.people = s.people + 1
             for id, fact in pairs(entry.o) do
                 s.orders = s.orders + 1
@@ -327,14 +443,22 @@ function Sharing:Summary(crafter)
     return s
 end
 
--- Each guild member's orders with a crafter, newest first, for the
--- history window: { { author, id, fact, status }, ... }
+-- Each guild member's (and realm player's) orders with a crafter, newest
+-- first, for the history window: { { author, id, fact, status, realm }, ... }
 function Sharing:Orders(crafter)
     local list = {}
     local confirm = ns.db and Realm().confirm or {}
     for author, entry in pairs(ns.db and Realm().shared[crafter] or {}) do
         for id, fact in pairs(entry.o) do
             list[#list + 1] = { author = author, id = id, fact = fact, status = confirm[id] and confirm[id].s }
+        end
+    end
+    local ignored = ns.db and Realm().ignored or {}
+    for author, entry in pairs(ns.db and Realm().sharedRealm[crafter] or {}) do
+        if not ignored[author] then
+            for id, fact in pairs(entry.o) do
+                list[#list + 1] = { author = author, id = id, fact = fact, status = confirm[id] and confirm[id].s, realm = true }
+            end
         end
     end
     table.sort(list, function(a, b) return (a.fact.at or 0) > (b.fact.at or 0) end)
@@ -353,11 +477,46 @@ function Sharing:Prune(now)
         end
         if not next(entries) then realm.shared[crafter] = nil end
     end
+    for crafter, entries in pairs(realm.sharedRealm) do
+        for author, entry in pairs(entries) do
+            if now - (entry.at or 0) > REALM_KEEP or realm.ignored[author] then entries[author] = nil end
+        end
+        if not next(entries) then realm.sharedRealm[crafter] = nil end
+    end
 end
 
 function Sharing:ForgetShared()
     Realm().shared = {}
     ns.Events:Fire("TC_SHARED_CHANGED")
+end
+
+function Sharing:ForgetRealm()
+    Realm().sharedRealm = {}
+    ns.Events:Fire("TC_SHARED_CHANGED")
+end
+
+-- Ignores a player's realm answers from now on, and forgets the ones kept.
+function Sharing:Ignore(author)
+    local realm = Realm()
+    realm.ignored[author] = true
+    for crafter, entries in pairs(realm.sharedRealm) do
+        entries[author] = nil
+        if not next(entries) then realm.sharedRealm[crafter] = nil end
+    end
+    ns.Events:Fire("TC_SHARED_CHANGED")
+end
+
+function Sharing:Unignore(author)
+    Realm().ignored[author] = nil
+    ns.Events:Fire("TC_SHARED_CHANGED")
+end
+
+-- Whether a player has shared realm answers with you (for the player menu).
+function Sharing:IsRealmReviewer(author)
+    for _, entries in pairs(ns.db and Realm().sharedRealm or {}) do
+        if entries[author] then return true end
+    end
+    return false
 end
 
 -- Pending questions time out.
@@ -369,3 +528,21 @@ C_Timer.NewTicker(ASK_TIMEOUT, function()
 end)
 
 ns.Events:On("TC_LOGIN", function() Sharing:Prune() end)
+
+-- /tc ignore Name-Realm, /tc unignore Name-Realm, /tc realm
+local L = ns.L
+ns:RegisterCommand("ignore", function(args)
+    local name = Util.FullName(args)
+    if not name or args == "" then Util.Print(L.IGNORE_USAGE) return end
+    Sharing:Ignore(name)
+    Util.Print(L.IGNORED:format(name))
+end, L.HELP_IGNORE)
+ns:RegisterCommand("unignore", function(args)
+    local name = Util.FullName(args)
+    if not name or args == "" then Util.Print(L.IGNORE_USAGE) return end
+    Sharing:Unignore(name)
+    Util.Print(L.UNIGNORED:format(name))
+end)
+ns:RegisterCommand("realm", function()
+    Util.Print(L.REALM_STATUS:format(L["REALM_STATUS_" .. ns.Channel:Status()] or ns.Channel:Status()))
+end, L.HELP_REALM)

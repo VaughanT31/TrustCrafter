@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.0.0
+
+- **Realm sharing:** turn on "Share on my realm" in the options and Trust Crafter also asks other Trust Crafter users on your realm about a crafter, on a hidden channel that never shows in your chat. Answers come straight from whoever wrote them, by whisper.
+- **Shown apart, always:** realm answers get their own line, *Realm (unverified): 4 orders from 2 people | 4/4 met or exceeded*, in tooltips, the history window and the crafting orders window. Guild members who answer still count as guild.
+- **Checked like guild reviews:** realm orders are confirmed against the crafter's own log too.
+- **Limits:** at most 20 orders per person per crafter (5 from the last week), counted by people; Trust Crafter answers at most 10 channel questions a minute and asks at most 20 an hour.
+- **Ignore anyone:** right-click a player and choose "Ignore their Trust Crafter reviews", or `/tc ignore Name-Realm`.
+- Realm answers are forgotten after 60 days; "Forget realm reviews" deletes them all. `/tc realm` shows whether the channel is connected.
+- Separate from guild sharing and off by default.
+
 ## 2.0.0
 
 - **Guild sharing:** turn on "Share with my guild" in the options and when you look a crafter up (the history window, `/tc lookup`, the personal order name box or a My Orders row), Trust Crafter asks your guild how their orders with that crafter went. Guild members' answers show beside your own, counted by people, not orders: *Guild: 7 orders from 3 people | 6/7 met or exceeded*. Works for crafters you've never used yourself.

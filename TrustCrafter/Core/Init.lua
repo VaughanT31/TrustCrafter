@@ -14,6 +14,9 @@
 --     claims  = { [orderID] = time, ... }     orders you took, until filled
 --     shared  = { [crafter] = { [author] = { at, o } } }  what guild members
 --                                              shared, see Data/Sharing.lua
+--     sharedRealm = { [crafter] = { [author] = { at, o } } }  what players on the
+--                                              realm channel shared (3.0)
+--     ignored = { [author] = true }            realm answers you've ignored
 --     confirm = { [orderID] = { s, q, at } }   what crafters' logs said
 --   }
 
@@ -37,6 +40,9 @@ local DEFAULTS = {
         -- on. Confirming orders you crafted only ever tells a customer
         -- about their own order, so it's on.
         share = false,
+        -- Realm sharing (3.0, Data/Channel.lua): off until turned on, and
+        -- separate from guild sharing.
+        realmShare = false,
         confirm = true,
         debug = false,
         minimapHide = false,
@@ -83,6 +89,9 @@ function ns:RealmData(realm)
     -- Guild sharing (Data/Sharing.lua).
     data.shared = data.shared or {}
     data.confirm = data.confirm or {}
+    -- Realm sharing (3.0).
+    data.sharedRealm = data.sharedRealm or {}
+    data.ignored = data.ignored or {}
     return data
 end
 
