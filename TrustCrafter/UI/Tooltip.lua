@@ -24,6 +24,8 @@ function Tooltip.SummaryLine(name, s)
         if s.avgTurnaround then
             parts[#parts + 1] = L.TIP_AVG:format(Util.FormatDuration(s.avgTurnaround))
         end
+        local age = Util.FormatAge(s.last)
+        if age then parts[#parts + 1] = GREY .. L.TIP_LAST:format(age) .. "|r" end
     end
     if s.notFilled > 0 then
         parts[#parts + 1] = GREY .. L.TIP_NOT_FILLED:format(s.notFilled) .. "|r"

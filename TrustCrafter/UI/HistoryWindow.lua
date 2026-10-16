@@ -192,7 +192,24 @@ local function CreateRow(parent, index)
     highlight:SetAllPoints()
     highlight:SetColorTexture(1, 1, 1, 0.06)
 
-    row:SetScript("OnClick", function(self)
+    row:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    row:SetScript("OnClick", function(self, button)
+        local record = self.record
+        if record and IsModifiedClick("CHATLINK") and record.link then
+            ChatEdit_InsertLink(record.link)
+            return
+        end
+        if button == "RightButton" then
+            local person = record and PersonOf(record)
+            if person and MenuUtil and MenuUtil.CreateContextMenu then
+                MenuUtil.CreateContextMenu(self, function(_, root)
+                    root:CreateTitle(Util.ShortName(person))
+                    root:CreateButton(L.MENU_WHISPER, function() ChatFrame_SendTell(person) end)
+                    root:CreateButton(L.MENU_LOOKUP, function() SlashCmdList.TRUSTCRAFTER("lookup " .. person) end)
+                end)
+            end
+            return
+        end
         state.selected = self.record and self.record.id
         if self.record and self.record.crafter and not Crafting() then ns.Sharing:Ask(self.record.crafter) end
         HistoryWindow:Refresh()

@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.0.1
+
+- **When you last used them:** the tooltip line now ends with how long ago your last order with a crafter was, like *last 12d ago*.
+- **Quicker actions in the history window:** right-click an order to whisper the crafter (or customer) or look them up, and shift-click to link the item in chat.
+- **/tc lookup on your target:** type `/tc lookup` with a player targeted to look them up. Lookups now include realm answers too.
+- Fixed two bits of text that still said guild sharing was coming.
+
 ## 3.0.0
 
 - **Realm sharing:** turn on "Share on my realm" in the options and Trust Crafter also asks other Trust Crafter users on your realm about a crafter, on a hidden channel that never shows in your chat. Answers come straight from whoever wrote them, by whisper.

@@ -49,6 +49,13 @@ function Util.FormatDuration(seconds)
     return rest > 0 and L.DURATION_D_H:format(days, rest) or L.DURATION_D:format(days)
 end
 
+-- "today" or "12d ago".
+function Util.FormatAge(timestamp)
+    if not timestamp or timestamp <= 0 then return nil end
+    local days = math.floor((Util.Now() - timestamp) / 86400)
+    return days <= 0 and L.AGE_TODAY or L.AGE_DAYS:format(days)
+end
+
 -- "3 Oct" style short date.
 function Util.FormatDate(timestamp)
     return timestamp and date("%d %b", timestamp) or ""

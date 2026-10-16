@@ -211,6 +211,10 @@ local lookupWaiting
 
 ns:RegisterCommand("lookup", function(args)
     local L = ns.L
+    if args == "" and UnitIsPlayer("target") and not UnitIsUnit("target", "player") then
+        local name, realm = UnitName("target")
+        args = Util.FullName(name, realm)
+    end
     if args == "" then
         Util.Print(L.LOOKUP_USAGE)
         return
@@ -218,11 +222,13 @@ ns:RegisterCommand("lookup", function(args)
     local crafter = Ledger:FindCrafter(args) or Util.FullName(args)
     local s = Ledger:Summary(crafter)
     local guild = ns.Sharing:Summary(crafter)
+    local realm = ns.Sharing:Summary(crafter, "realm")
     if s then
         Util.Print(ns.Presence:ForCrafter(crafter) .. " " .. ns.Tooltip.SummaryLine(Util.ShortName(crafter), s))
     end
     if guild then Util.Print(Util.ShortName(crafter) .. ": " .. ns.Tooltip.GuildLine(guild)) end
-    if not s and not guild then Util.Print(L.LOOKUP_NONE:format(args)) end
+    if realm then Util.Print(Util.ShortName(crafter) .. ": " .. ns.Tooltip.RealmLine(realm)) end
+    if not s and not guild and not realm then Util.Print(L.LOOKUP_NONE:format(Util.ShortName(crafter))) end
     -- Ask the guild too; replies print here when they arrive.
     if ns.Sharing:Ask(crafter) then
         lookupWaiting = crafter
@@ -241,5 +247,7 @@ ns.Events:On("TC_SHARED_CHANGED", function(_, crafter)
         lookupWaiting = nil
         local guild = waiting and ns.Sharing:Summary(waiting)
         if guild then Util.Print(Util.ShortName(waiting) .. ": " .. ns.Tooltip.GuildLine(guild)) end
+        local realm = waiting and ns.Sharing:Summary(waiting, "realm")
+        if realm then Util.Print(Util.ShortName(waiting) .. ": " .. ns.Tooltip.RealmLine(realm)) end
     end)
 end)

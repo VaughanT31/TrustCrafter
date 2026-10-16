@@ -79,7 +79,7 @@ Orders you placed before installing TrustCrafter are added too, for as long as t
 | `/tc` | Open or close your order history (or click the minimap button) |
 | `/tc options` | Open the options |
 | `/tc minimap` | Hide or show the minimap button |
-| `/tc lookup Name` | What you know about a crafter |
+| `/tc lookup Name` | What you know about a crafter (no name: your target) |
 | `/tc export` | Copy your orders as CSV for a spreadsheet |
 | `/tc tooltip` | Turn the tooltip line on or off |
 | `/tc wipe` | Delete your history on this realm (asks first) |
