@@ -1,6 +1,8 @@
 -- TrustCrafter - your history on Blizzard's crafting orders window:
 --   - Personal order: typing a crafter's name shows what you know about
 --     them right beside the name box, before you send the order.
+--   - Personal order: a "Find a Crafter" button beside the name box (3.1,
+--     UI/FinderWindow.lua) lists crafters on your realm who know the recipe.
 --   - My Orders: a badge on orders from crafters you have used before, and
 --     your history with them added to the row's tooltip.
 -- That window is load-on-demand (Blizzard_ProfessionsCustomerOrders), so
@@ -18,6 +20,61 @@ local hooked = false
 local recipientBox, UpdateRecipient
 
 local ASK_DELAY = 1.5
+local CHANNEL_WAIT = 12             -- seconds to wait for the channel after turning Find a Crafter on
+
+-- The recipe the order form is showing.
+local function FormRecipe(form)
+    local transaction = form and form.transaction
+    if transaction and transaction.GetRecipeID then
+        local ok, id = pcall(transaction.GetRecipeID, transaction)
+        if ok and type(id) == "number" then return id end
+    end
+    local order = form and form.order
+    return order and type(order.spellID) == "number" and order.spellID or nil
+end
+
+local function StartSearch(form, box)
+    local recipeID = FormRecipe(form)
+    if not recipeID then
+        Util.Print(ns.L.FINDER_ERR_norecipe)
+        return
+    end
+    ns.FinderWindow:Search(recipeID, function(name)
+        box:SetText(name)
+        box:SetCursorPosition(0)
+    end, ProfessionsCustomerOrdersFrame)
+end
+
+-- Turning Find a Crafter on from the button: join the channel, then search
+-- once it's connected (or straight away for a guild-only search).
+local function TurnOnAndSearch(form, box)
+    ns.db.settings.finder = true
+    ns.Channel:Update()
+    ns.Events:Fire("TC_SETTINGS_CHANGED")
+    Util.Print(ns.L.FINDER_ON)
+    local waited = 0
+    local function Try()
+        local status = ns.Channel:Status()
+        if ns.Channel:Number() or status == "noslot" or status == "blocked" or waited >= CHANNEL_WAIT then
+            StartSearch(form, box)
+            return
+        end
+        waited = waited + 1
+        C_Timer.After(1, Try)
+    end
+    Try()
+end
+
+StaticPopupDialogs["TRUSTCRAFTER_FINDER_ON"] = {
+    text = ns.L.FINDER_ASK_ON,
+    button1 = YES,
+    button2 = NO,
+    OnAccept = function(_, data) TurnOnAndSearch(data.form, data.box) end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+}
 
 local function SummaryFor(name)
     if not name or name == "" or (issecretvalue and issecretvalue(name)) then return nil, nil end
@@ -31,9 +88,25 @@ local function HookRecipient(form)
     local box = form and form.OrderRecipientTarget
     if not box or not box.HookScript then return end
     -- Parented to the box, so it hides along with it.
+    local find = ns.Skin.Button(box, ns.L.FINDER_BUTTON, 110, 22)
+    find:SetPoint("LEFT", box, "RIGHT", 10, 0)
+    find:SetScript("OnClick", function()
+        if ns.db.settings.finder then
+            StartSearch(form, box)
+        else
+            StaticPopup_Show("TRUSTCRAFTER_FINDER_ON", nil, nil, { form = form, box = box })
+        end
+    end)
+    find:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine(ns.L.FINDER_BUTTON, 1, 1, 1)
+        GameTooltip:AddLine(ns.L.FINDER_BUTTON_TIP, nil, nil, nil, true)
+        GameTooltip:Show()
+    end)
+    find:SetScript("OnLeave", function() GameTooltip:Hide() end)
     local text = box:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    text:SetPoint("LEFT", box, "RIGHT", 10, 0)
-    text:SetWidth(280)
+    text:SetPoint("LEFT", find, "RIGHT", 10, 0)
+    text:SetWidth(240)
     text:SetJustifyH("LEFT")
     text:SetWordWrap(false)
     local askTimer

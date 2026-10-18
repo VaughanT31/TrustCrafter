@@ -85,6 +85,8 @@ Orders you placed before installing TrustCrafter are added too, for as long as t
 | `/tc wipe` | Delete your history on this realm (asks first) |
 | `/tc realm` | Whether realm sharing is connected |
 | `/tc ignore Name-Realm` | Ignore a player's realm reviews (`/tc unignore` to undo) |
+| `/tc busy` | Mark yourself busy (or not) for Find a Crafter |
+| `/tc note text` | A short note customers see when they find you (empty clears it) |
 | `/tc debug` | Log crafting order events to chat, for bug reports |
 | `/tc help` | List commands |
 
@@ -98,6 +100,17 @@ Turn on **Share on my realm** in the options and TrustCrafter also asks other Tr
 - Realm answers are forgotten after 60 days. "Forget realm reviews" in the options deletes them all.
 - The channel takes one of your 10 chat channel slots. If it's locked or you're removed from it, a backup channel is used. `/tc realm` shows the status.
 - Separate from guild sharing, and off by default.
+
+## Find a Crafter (3.1)
+
+Turn on **Find a Crafter** in the options (or click the **Find a Crafter** button on a personal order, which asks first). The button asks the hidden realm channel and your guild who knows the recipe. Crafters with Find a Crafter on whisper back which of their characters know it, so every answer comes from the crafter themselves.
+
+- Results are sorted by trust: your own good orders first, then good guild reviews, then good realm reviews, then crafters who are online and not busy. Your own characters that know the recipe are listed last.
+- **Use** puts the name in the order's recipient box. **Whisper** opens a whisper. Hover a row for the full history; the first few crafters' guild and realm reviews are asked for straight away.
+- As a crafter, open each profession once per character so its learned recipes are known. "Include my other characters" lists your alts too; "Let customers find me" can be turned off to search without being listed.
+- Mark yourself busy with `/tc busy`, and add a short note with `/tc note Free with your mats`.
+- Searches: at most one per recipe every 30 seconds and 20 an hour. Answers: at most 10 a minute, spread over a couple of seconds. Ignored players' answers are dropped.
+- Uses the same hidden channel as realm sharing, so it takes one chat channel slot. Off by default.
 
 ## Installation
 

@@ -1,6 +1,7 @@
--- TrustCrafter - the hidden realm channel, for realm sharing (3.0).
+-- TrustCrafter - the hidden realm channel, for realm sharing (3.0) and
+-- Find a Crafter (3.1).
 --
--- When "Share on my realm" is on, TrustCrafter joins a channel the player
+-- When "Share on my realm" or "Find a Crafter" is on, TrustCrafter joins a channel the player
 -- never sees: a temporary channel (so it isn't saved into their channel
 -- list), removed from every chat tab, and used only for addon messages,
 -- never chat text. It's only for short questions ("anyone have orders with
@@ -14,7 +15,7 @@
 --     If joining fails, the next backup name is tried; if we drop out of
 --     the channel, it's joined again (then the next name if that fails).
 --     TrustCrafter never tries to own or moderate the channel.
---   - Turning realm sharing off leaves the channel straight away.
+--   - Turning both off leaves the channel straight away.
 
 local _, ns = ...
 
@@ -35,8 +36,10 @@ local state = {
 
 local function Settings() return ns.db and ns.db.settings or {} end
 
+-- Joined for realm sharing or Find a Crafter (3.1), either one.
 function Channel:Wanted()
-    return Settings().realmShare == true and ns.Comm:Available()
+    local s = Settings()
+    return (s.realmShare == true or s.finder == true) and ns.Comm:Available()
 end
 
 function Channel:Name()

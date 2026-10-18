@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.1.0
+
+- **Find a Crafter:** a new button beside the name box on personal orders. It asks other Trust Crafter users on your realm, and your guild, who knows the recipe, then lists them with your history, your guild's reviews and the realm's. Crafters you've had good orders from come first, then good reviews, then crafters who are online and not busy. **Use** puts their name on the order, **Whisper** opens a whisper, and hovering shows their full history.
+- **Be found as a crafter:** with Find a Crafter on, your characters are listed when someone searches for a recipe they know. Open each profession once so Trust Crafter knows its recipes. Your other characters on the realm are listed as alts (you can turn that off), and you can turn off being listed at all.
+- **Busy and a note:** mark yourself busy (`/tc busy` or the options) and add a short note customers see, like *Free with your mats* (`/tc note`).
+- Answers come straight from the crafter by whisper, at most 10 a minute, and ignored players are left out. Uses the same hidden realm channel as realm sharing, and is off until you turn it on (the button asks first).
+
 ## 3.0.1
 
 - **When you last used them:** the tooltip line now ends with how long ago your last order with a crafter was, like *last 12d ago*.

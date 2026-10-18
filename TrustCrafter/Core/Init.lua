@@ -18,6 +18,8 @@
 --                                              realm channel shared (3.0)
 --     ignored = { [author] = true }            realm answers you've ignored
 --     confirm = { [orderID] = { s, q, at } }   what crafters' logs said
+--     recipes = { [character] = { at, p } }    recipes your characters know,
+--                                              for Find a Crafter (3.1)
 --   }
 
 local ADDON_NAME, ns = ...
@@ -43,6 +45,15 @@ local DEFAULTS = {
         -- Realm sharing (3.0, Data/Channel.lua): off until turned on, and
         -- separate from guild sharing.
         realmShare = false,
+        -- Find a Crafter (3.1, Data/Finder.lua): off until turned on. Once
+        -- on, you're listed for recipes you know unless discoverable is off;
+        -- finderAlts lists your other characters on the realm too.
+        finder = false,
+        discoverable = true,
+        finderAlts = true,
+        busy = false,
+        crafterNote = "",
+        finderTipShown = false,
         confirm = true,
         debug = false,
         minimapHide = false,
@@ -92,6 +103,8 @@ function ns:RealmData(realm)
     -- Realm sharing (3.0).
     data.sharedRealm = data.sharedRealm or {}
     data.ignored = data.ignored or {}
+    -- Find a Crafter (3.1).
+    data.recipes = data.recipes or {}
     return data
 end
 
