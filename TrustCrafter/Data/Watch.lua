@@ -441,6 +441,20 @@ function Watch:Enabled()
     return Settings().desk == true
 end
 
+-- Listening only happens where people trade crafts: in a city or a
+-- sanctuary (rested areas count), and never in combat, where chat can't
+-- be read safely and an alert would only get in the way.
+function Watch.InTown()
+    if InCombatLockdown and InCombatLockdown() then return false end
+    if IsResting and IsResting() then return true end
+    local pvp = GetZonePVPInfo and GetZonePVPInfo()
+    return pvp == "sanctuary"
+end
+
+function Watch:Listening()
+    return self:Enabled() and Watch.InTown()
+end
+
 local function Prune(list, now)
     local cutoff = now - KEEP_DAYS * 86400
     while #list > 0 and (list[1].t < cutoff or #list > KEEP) do table.remove(list, 1) end
@@ -624,7 +638,7 @@ end
 local WANT = { trade = "deskTrade", services = "deskServices", general = "deskGeneral" }
 
 ns.Events:On("CHAT_MSG_CHANNEL", function(_, text, sender, _, _, _, _, zoneChannelID, _, channelBaseName, _, _, guid)
-    if not ns.db or not Watch:Enabled() then return end
+    if not ns.db or not Watch:Listening() then return end
     if Secret(text) or Secret(sender) or Secret(guid) then return end
     local kind = Watch.ChannelKind(channelBaseName, zoneChannelID)
     if not kind or not Settings()[WANT[kind]] then return end
@@ -689,7 +703,7 @@ function Watch:Visible(now)
 end
 
 ns.Events:On("CHAT_MSG_WHISPER", function(_, text, sender, _, _, _, _, _, _, _, _, _, guid)
-    if not ns.db or not Watch:Enabled() then return end
+    if not ns.db or not Watch:Listening() then return end
     if Secret(text) or Secret(sender) or Secret(guid) then return end
     Watch:Log(sender, text, false)
     if Settings().deskWhispers == false then return end
@@ -697,7 +711,7 @@ ns.Events:On("CHAT_MSG_WHISPER", function(_, text, sender, _, _, _, _, _, _, _, 
 end)
 
 ns.Events:On("CHAT_MSG_WHISPER_INFORM", function(_, text, target)
-    if not ns.db or not Watch:Enabled() then return end
+    if not ns.db or not Watch:Listening() then return end
     if Secret(text) or Secret(target) then return end
     Watch:Log(target, text, true)
 end)

@@ -270,6 +270,10 @@ end
 local queue, running = {}, false
 
 local function Step()
+    if InCombatLockdown() then
+        C_Timer.After(2, Step)        -- wait for combat to end
+        return
+    end
     for _ = 1, BATCH do
         local job = table.remove(queue, 1)
         if not job then
