@@ -1,0 +1,6 @@
+<Bindings>
+    <Binding name="TRUSTCRAFTER_GREET" header="TRUSTCRAFTER" category="ADDONS">TrustCrafter_Bind("greet")</Binding>
+    <Binding name="TRUSTCRAFTER_WHISPER" category="ADDONS">TrustCrafter_Bind("whisper")</Binding>
+    <Binding name="TRUSTCRAFTER_DISMISS" category="ADDONS">TrustCrafter_Bind("dismiss")</Binding>
+    <Binding name="TRUSTCRAFTER_DESK" category="ADDONS">TrustCrafter_Bind("desk")</Binding>
+</Bindings>

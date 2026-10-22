@@ -5,7 +5,7 @@ A World of Warcraft addon that remembers who crafted your orders, what quality y
 Crafting orders are full of crafters you know nothing about. TrustCrafter keeps a private ledger of every order you place, so the next time you see a crafter you can tell at a glance whether they have done good work for you before.
 
 - **Game:** Retail, Midnight (12.x)
-- **Interface:** `120100`
+- **Interface:** `120105`
 
 ## What it does
 
@@ -85,7 +85,8 @@ Orders you placed before installing TrustCrafter are added too, for as long as t
 | `/tc wipe` | Delete your history on this realm (asks first) |
 | `/tc realm` | Whether realm sharing is connected |
 | `/tc ignore Name-Realm` | Ignore a player's realm reviews (`/tc unignore` to undo) |
-| `/tc busy` | Mark yourself busy (or not) for Find a Crafter |
+| `/tc desk` | The Crafter Desk: requests from chat and its settings (or Shift-click the minimap button) |
+| `/tc busy` | Mark yourself busy (or not) for Find a Crafter and Crafter Desk replies |
 | `/tc note text` | A short note customers see when they find you (empty clears it) |
 | `/tc debug` | Log crafting order events to chat, for bug reports |
 | `/tc help` | List commands |
@@ -111,6 +112,24 @@ Turn on **Find a Crafter** in the options (or click the **Find a Crafter** butto
 - Mark yourself busy with `/tc busy`, and add a short note with `/tc note Free with your mats`.
 - Searches: at most one per recipe every 30 seconds and 20 an hour. Answers: at most 10 a minute, spread over a couple of seconds. Ignored players' answers are dropped.
 - Uses the same hidden channel as realm sharing, so it takes one chat channel slot. Off by default.
+
+## Crafter Desk (4.0)
+
+Turn on **Watch chat for crafting requests** (options, or `/tc desk` > Settings). When someone in Trade, Services or a whisper asks for something one of your characters can craft, an alert shows who, what, which of your characters makes it, the quality you can reach with and without concentration, the material cost (with Auction Coach), your history with them and how often it was asked today.
+
+- A message counts when it has a request word (LF, WTB, need, recraft, anyone craft...) and no ignore word (WTS, LFW, LF work, selling...). Both lists are editable, and the test box shows what any chat line would do.
+- Matches: item links to anything your characters craft, keywords you gave an item, this expansion's item names, related words made from those names ("generosity chest" for Allied Chestplate of Generosity, shown in grey in the Keywords column), and asking for your profession by name or short form (LF bs, LF jc).
+- **Characters** (left of the window): every character on the realm. Tick the ones to watch for, click one for its **Items** (watchlist: each recipe on or off, the quality it makes, your keywords, and *Only max quality*) and **Messages** (its own replies, one per line with {name} {item} {character} {profession} {quality} {commission} {mats}, and its own commission).
+- When several of your characters know a recipe, the one that makes it at max quality answers first, then the one you're on, then the most skilled.
+- **Greet** whispers one reply, built from varied pieces in your tone (Friendly, Short, Formal) and answering what they asked: quality, whose mats, your commission (when they ask about price, or always), and which character to send the order to. Hover to read it first, right-click for another wording.
+- Never automatic: one click per whisper, one greeting per request, none to the same person for the same thing within 10 minutes, at most 5 a minute.
+- **Requests** lists the last week with today's numbers. A greeted request becomes *ordered* when you fill an order for that customer within a day.
+- **Mute item** stops alerts for an item; right-click a request to ignore a player. Right-click a name in chat for **Reply as a crafter**.
+- **Desk button:** opens the desk and lights up with a count when a request comes in. Hover for who's asking and what you'd say; left-click greets, middle-click whispers, right-click dismisses, Shift-click opens the desk. Pick its place in the options (below the minimap, top, right edge, above the action bars, or off) or Shift-drag it anywhere. Key bindings for greet, whisper, dismiss and open are under Key Bindings > AddOns.
+- Drag the alert bar where you want it and click **Pin** to keep it on screen between requests.
+- Alert cards show the proposed greeting and can be turned off in the options if you'd rather use just the button.
+- In a watchlist, the quality in brackets is what you reach with concentration; hover an item for the details.
+- Open each profession once on each character so the desk knows its recipes and quality. Off by default.
 
 ## Installation
 

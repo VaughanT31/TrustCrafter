@@ -19,7 +19,10 @@
 --     ignored = { [author] = true }            realm answers you've ignored
 --     confirm = { [orderID] = { s, q, at } }   what crafters' logs said
 --     recipes = { [character] = { at, p } }    recipes your characters know,
---                                              for Find a Crafter (3.1)
+--                                              for Find a Crafter (3.1) and
+--                                              the Crafter Desk (4.0)
+--     requests = { request, ... }              crafting requests seen in
+--                                              chat, see Data/Watch.lua (4.0)
 --   }
 
 local ADDON_NAME, ns = ...
@@ -55,6 +58,24 @@ local DEFAULTS = {
         crafterNote = "",
         finderTipShown = false,
         confirm = true,
+        -- Crafter Desk (4.0, Data/Watch.lua): off until turned on. Word
+        -- lists are nil until edited (the defaults are in Data/Watch.lua).
+        desk = false,
+        deskTrade = true,
+        deskServices = true,
+        deskGeneral = false,
+        deskWhispers = true,
+        deskAlts = true,
+        deskSound = true,
+        deskSoundName = "whisper",
+        deskTone = "friendly",
+        deskCommission = "",
+        deskCommissionAlways = false,
+        deskMuted = {},
+        deskCards = true,
+        deskBarPinned = false,
+        deskAutoKeys = true,
+        deskButton = "minimap",
         debug = false,
         minimapHide = false,
         minimapAngle = 220,
@@ -105,6 +126,8 @@ function ns:RealmData(realm)
     data.ignored = data.ignored or {}
     -- Find a Crafter (3.1).
     data.recipes = data.recipes or {}
+    -- Crafter Desk (4.0).
+    data.requests = data.requests or {}
     return data
 end
 

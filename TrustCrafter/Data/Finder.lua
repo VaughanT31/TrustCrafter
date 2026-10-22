@@ -20,7 +20,12 @@
 -- off to search without being listed.
 --
 -- Kept per realm:
---   recipes[character] = { at, p = { [professionID] = { n, s, m, r = { [recipeID] = true } } } }
+--   recipes[character] = { at, p = { [professionID] = { n, s, m, r = { [recipeID] = true },
+--                                       o = { [itemID] = recipeID },     what each recipe makes
+--                                       w = { [recipeID] = "lower name" }, this expansion's names
+--                                       x = child profession (expansion) ID } } }
+-- o and w (4.0) let the Crafter Desk (Data/Watch.lua) tell which of your
+-- characters can make an item someone asks for in chat.
 
 local _, ns = ...
 local Util = ns.Util
@@ -85,6 +90,19 @@ local function UsableRecipe(info)
         and not info.isSalvageRecipe and not info.isRecraft
 end
 
+-- The item a recipe makes, or nil.
+function Finder.OutputOf(recipeID)
+    local ok, schematic = pcall(C_TradeSkillUI.GetRecipeSchematic, recipeID, false)
+    return ok and type(schematic) == "table" and schematic.outputItemID or nil
+end
+
+-- Whether a recipe belongs to this expansion's part of the profession.
+local function InExpansion(recipeID, childID)
+    if not childID or not C_TradeSkillUI.GetProfessionInfoByRecipeID then return false end
+    local ok, info = pcall(C_TradeSkillUI.GetProfessionInfoByRecipeID, recipeID)
+    return ok and type(info) == "table" and info.professionID == childID
+end
+
 -- Notes the open profession's learned recipes for the current character.
 -- Skipped for another player's linked profession and guild views.
 function Finder:ScanProfession()
@@ -97,11 +115,16 @@ function Finder:ScanProfession()
     local base = T.GetBaseProfessionInfo()
     if not base or not base.professionID or base.professionID == 0 then return false end
     local child = T.GetChildProfessionInfo and T.GetChildProfessionInfo() or nil
-    local known, count = {}, 0
+    local known, count, outputs, names = {}, 0, {}, {}
+    local childID = child and child.professionID
     for _, id in ipairs(T.GetAllRecipeIDs() or {}) do
-        if UsableRecipe(T.GetRecipeInfo(id)) then
+        local info = T.GetRecipeInfo(id)
+        if UsableRecipe(info) then
             known[id] = true
             count = count + 1
+            local item = Finder.OutputOf(id)
+            if item then outputs[item] = id end
+            if info.name and InExpansion(id, childID) then names[id] = info.name:lower() end
         end
     end
     if count == 0 then return false end
@@ -109,13 +132,22 @@ function Finder:ScanProfession()
     local realm = Realm()
     local entry = realm.recipes[me] or { p = {} }
     entry.at = Util.Now()
+    -- Looking at an older expansion's recipes keeps the newer names.
+    local before = entry.p[base.professionID]
+    if before and before.x and childID and before.x > childID then
+        names, childID = before.w or {}, before.x
+    end
     entry.p[base.professionID] = {
         n = base.professionName,
         s = child and child.skillLevel or nil,
         m = child and child.maxSkillLevel or nil,
         r = known,
+        o = outputs,
+        w = names,
+        x = childID,
     }
     realm.recipes[me] = entry
+    ns.Events:Fire("TC_RECIPES_SCANNED", me, base.professionID)
     return true, count
 end
 

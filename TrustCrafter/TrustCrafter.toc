@@ -2,10 +2,10 @@
 ## Title: TrustCrafter
 ## Notes: Remembers who crafted your orders, what you asked for and what you got.
 ## Author: CtrlShift_Zed
-## Version: 3.1.0
+## Version: 4.0.0
 ## Category: CtrlShift_Zed
 ## SavedVariables: TrustCrafterDB
-## OptionalDeps: CraftScan
+## OptionalDeps: CraftScan, AuctionCoach
 ## IconTexture: Interface\AddOns\TrustCrafter\icon
 ## AddonCompartmentFunc: TrustCrafter_OnAddonCompartmentClick
 ## X-License: MIT
@@ -22,6 +22,7 @@ Locales\enUS.lua
 Core\Util.lua
 Core\Events.lua
 Core\Init.lua
+Core\API.lua
 
 Data\Orders.lua
 Data\Crafted.lua
@@ -31,6 +32,9 @@ Data\Comm.lua
 Data\Channel.lua
 Data\Sharing.lua
 Data\Finder.lua
+Data\Reach.lua
+Data\Watch.lua
+Data\Replies.lua
 
 UI\Skin.lua
 UI\Tooltip.lua
@@ -38,6 +42,9 @@ UI\CraftScan.lua
 UI\HistoryWindow.lua
 UI\ExportWindow.lua
 UI\FinderWindow.lua
+UI\DeskAlert.lua
+UI\DeskWindow.lua
+UI\DeskButton.lua
 UI\OrderScreen.lua
 UI\CrafterOrders.lua
 UI\PlayerMenu.lua

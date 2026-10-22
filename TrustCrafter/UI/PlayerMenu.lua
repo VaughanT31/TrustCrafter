@@ -35,9 +35,17 @@ local function AddToMenu(_, rootDescription, contextData)
     local realmData = name and ns:RealmData()
     local ignored = realmData and realmData.ignored and realmData.ignored[name]
     local reviewer = name and ns.Sharing and ns.Sharing.IsRealmReviewer and (ignored or ns.Sharing:IsRealmReviewer(name))
-    if not s and not reviewer then return end
+    -- Crafter Desk (4.0): reply to what they just said in chat, even when
+    -- the desk didn't pick it up.
+    local reply = name and ns.Watch and ns.Watch:Enabled() and ns.Watch:HasRecent(name)
+    if not s and not reviewer and not reply then return end
     rootDescription:CreateDivider()
     rootDescription:CreateTitle(L.WINDOW_TITLE)
+    if reply then
+        rootDescription:CreateButton(L.MENU_DESK_REPLY, function()
+            if not ns.Watch:Manual(name) then Util.Print(L.DESK_NO_MESSAGE) end
+        end)
+    end
     if s then
         rootDescription:CreateButton(ns.Tooltip.SummaryLine(nil, s), function()
             ns.HistoryWindow:ShowCrafter(crafter)
