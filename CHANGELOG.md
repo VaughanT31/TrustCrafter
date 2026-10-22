@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.1.0
+
+- **A bigger Crafter Desk:** drag the bottom right corner to make the window bigger. The columns get wider and the lists show more rows, and it remembers the size. Shift-drag still scales the whole window.
+- **Ordered, then Delivered:** a request now says *Ordered* when you take an order from that customer and *Delivered* once you fill it, and today's numbers count both.
+- **Quiet requests leave the list:** a request goes once nothing has happened for 10 minutes (no new ask, greeting or whisper from them), and 10 minutes after it's delivered. One you've taken an order for stays until it's delivered.
+- **Item names load:** requests and alert cards no longer show *item 240949* while the game is still loading the item; they ask the game for it and fill in the name as soon as it arrives, using their link until then.
+- **Seconds on new alerts:** an alert card counts up in seconds for its first minute (*12 sec*), then in minutes.
+
 ## 4.0.0
 
 - **Crafter Desk:** turn it on and Trust Crafter watches Trade, Services and your whispers (General too, if you want) for people asking for something one of your characters can craft. An item link matches exactly, this expansion's item names match too, and so does asking for your profession (*LF blacksmith*).

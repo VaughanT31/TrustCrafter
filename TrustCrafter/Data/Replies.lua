@@ -243,7 +243,7 @@ end
 -- many whispers this minute).
 function Replies:CanGreet(request, now)
     now = now or Util.Now()
-    if request.status == "greeted" or request.status == "ordered" then return false, "done" end
+    if request.status == "greeted" or request.status == "ordered" or request.status == "delivered" then return false, "done" end
     local key = request.customer .. "|" .. tostring(request.recipeID or request.professionID or "")
     if greetedFor[key] and now - greetedFor[key] < REGREET then return false, "recent" end
     for i = #sent, 1, -1 do

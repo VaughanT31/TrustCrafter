@@ -34,9 +34,38 @@ local ROWS = 24
 local GREY = "|cff999999"
 local CHAT_LINES = 10                 -- whispers shown when hovering a request
 
-local STATUS_COLORS = { new = "|cff66ccff", greeted = "|cff66dd77", ordered = "|cffffd100", dismissed = GREY }
+local STATUS_COLORS = { new = "|cff66ccff", greeted = "|cff66dd77", ordered = "|cffffd100", delivered = "|cff1eff00", dismissed = GREY }
 
-local frame, pages, tabs, rows, charRows, itemRows
+-- The window can be dragged bigger than WIDTH x HEIGHT (settings.deskSize).
+-- Columns are { key, x, width, share }: the extra width goes to the columns
+-- with a share, and lists get more rows from the extra height.
+local MAX_EXTRA_W, MAX_EXTRA_H = 900, 600
+local REQUEST_COLUMNS = { { "time", 4, 54 }, { "who", 62, 120, 0.25 }, { "what", 186, 210, 0.5 },
+    { "crafter", 400, 90, 0.25 }, { "status", 494, 72 } }
+local ITEM_COLUMNS = { { "name", 42, 210, 0.5 }, { "prof", 256, 90 }, { "reach", 350, 80 }, { "keys", 434, PAGE_W - 438, 0.5 } }
+local extraW, extraH = 0, 0
+
+local function Columns(spec)
+    local out, shift = {}, 0
+    for _, c in ipairs(spec) do
+        local grow = math.floor(extraW * (c[4] or 0))
+        out[c[1]] = { x = c[2] + shift, w = c[3] + grow }
+        shift = shift + grow
+    end
+    return out
+end
+
+local function PlaceCell(fs, col, y)
+    fs:ClearAllPoints()
+    if y then fs:SetPoint("TOPLEFT", col.x, y) else fs:SetPoint("LEFT", col.x, 0) end
+    fs:SetWidth(col.w)
+end
+
+local function RequestRows() return ROWS + math.floor(extraH / ROW) end
+local function ItemRows() return ITEM_ROWS + math.floor(extraH / ROW) end
+local function CharRows() return CHAR_ROWS + math.floor(extraH / CHAR_ROW) end
+
+local frame, pages, tabs, rows, charRows, itemRows, sideFrame
 local view = "requests"
 local offset = 0
 local selected                     -- the character in the Items and Messages pages
@@ -89,11 +118,7 @@ local function CreateRow(parent, index)
         fs:SetWordWrap(false)
         return fs
     end
-    row.time = Cell(4, 54)
-    row.who = Cell(62, 120)
-    row.what = Cell(186, 210)
-    row.crafter = Cell(400, 90)
-    row.status = Cell(494, 72)
+    for _, c in ipairs(REQUEST_COLUMNS) do row[c[1]] = Cell(c[2], c[3]) end
     row:SetScript("OnClick", function(self, mouse)
         if not self.request then return end
         if mouse == "RightButton" then
@@ -144,13 +169,17 @@ local function BuildRequests(page)
     page.summary:SetPoint("RIGHT", 0, 0)
     page.summary:SetJustifyH("LEFT")
 
-    local heads = { { 4, L.DESK_COL_TIME }, { 62, L.DESK_COL_WHO }, { 186, L.DESK_COL_WHAT }, { 400, L.DESK_COL_CRAFTER }, { 494, L.DESK_COL_STATUS } }
-    for _, h in ipairs(heads) do
+    local titles = { time = L.DESK_COL_TIME, who = L.DESK_COL_WHO, what = L.DESK_COL_WHAT, crafter = L.DESK_COL_CRAFTER, status = L.DESK_COL_STATUS }
+    page.heads = {}
+    for _, c in ipairs(REQUEST_COLUMNS) do
         local fs = page:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        fs:SetPoint("TOPLEFT", h[1], -24)
-        fs:SetText(h[2])
+        fs:SetPoint("TOPLEFT", c[2], -24)
+        fs:SetJustifyH("LEFT")
+        fs:SetText(titles[c[1]])
+        page.heads[c[1]] = fs
     end
     local list = CreateFrame("Frame", nil, page)
+    page.list = list
     list:SetPoint("TOPLEFT", 0, -42)
     list:SetPoint("RIGHT", 0, 0)
     list:SetHeight(ROWS * ROW)
@@ -168,9 +197,18 @@ local function BuildRequests(page)
     page.empty:SetJustifyH("LEFT")
 end
 
+-- The item's name, asking the game to load it when it isn't cached yet
+-- (GET_ITEM_INFO_RECEIVED redraws); until then the name in their link.
+local function ItemName(itemID)
+    local name = C_Item.GetItemNameByID(itemID)
+    if not name and C_Item.RequestLoadItemDataByID then C_Item.RequestLoadItemDataByID(itemID) end
+    return name
+end
+
 local function ItemShort(request)
     if request.itemID then
-        return C_Item.GetItemNameByID(request.itemID) or ("item " .. request.itemID)
+        return ItemName(request.itemID) or (request.link and request.link:match("|h%[(.-)%]|h"))
+            or ("item " .. request.itemID)
     end
     if request.how == "profession" then return L.DESK_A_PROFESSION:format(request.profession or "?") end
     return L.DESK_SOMETHING
@@ -179,12 +217,12 @@ end
 local function RefreshRequests(page)
     local now = Util.Now()
     local list = ns.Watch:Visible(now)
-    local asked, greeted, ordered = ns.Watch:Today()
-    page.summary:SetText(L.DESK_TODAY:format(asked, greeted, ordered))
+    page.summary:SetText(L.DESK_TODAY:format(ns.Watch:Today()))
     local count = #list
-    offset = math.min(offset, math.max(0, count - ROWS))
+    local shown = RequestRows()
+    offset = math.min(offset, math.max(0, count - shown))
     for i, row in ipairs(rows) do
-        local request = list[count - offset - i + 1]
+        local request = i <= shown and list[count - offset - i + 1] or nil
         row.request = request
         row:SetShown(request ~= nil)
         if request then
@@ -475,6 +513,7 @@ local function BuildCharacters(side)
     list:SetPoint("TOPLEFT", 0, -20)
     list:SetPoint("RIGHT", 0, 0)
     list:SetHeight(CHAR_ROWS * CHAR_ROW)
+    side.list = list
     list:EnableMouseWheel(true)
     list:SetScript("OnMouseWheel", function(_, delta)
         charOffset = math.max(0, charOffset - delta * 2)
@@ -496,9 +535,10 @@ local function RefreshCharacters()
         for _, c in ipairs(list) do if c.name == me then selected = me end end
         selected = selected or (list[1] and list[1].name)
     end
-    charOffset = math.min(charOffset, math.max(0, #list - CHAR_ROWS))
+    local shown = CharRows()
+    charOffset = math.min(charOffset, math.max(0, #list - shown))
     for i, row in ipairs(charRows) do
-        local c = list[charOffset + i]
+        local c = i <= shown and list[charOffset + i] or nil
         row.char = c
         row:SetShown(c ~= nil)
         if c then
@@ -513,12 +553,6 @@ local function RefreshCharacters()
 end
 
 -- Items page ---------------------------------------------------------------------
-
-local function ItemName(itemID)
-    local name = C_Item.GetItemNameByID(itemID)
-    if not name and C_Item.RequestLoadItemDataByID then C_Item.RequestLoadItemDataByID(itemID) end
-    return name
-end
 
 -- "R1-R2", plus the quality with concentration, or a grey dash.
 local function ReachText(reach)
@@ -578,10 +612,7 @@ local function CreateItemRow(parent, index)
         fs:SetWordWrap(false)
         return fs
     end
-    row.name = Cell(42, 210)
-    row.prof = Cell(256, 90)
-    row.reach = Cell(350, 80)
-    row.keys = Cell(434, PAGE_W - 438)
+    for _, c in ipairs(ITEM_COLUMNS) do row[c[1]] = Cell(c[2], c[3]) end
     row:SetScript("OnClick", function(self)
         if not self.item then return end
         itemPicked = self.item.recipeID
@@ -675,13 +706,20 @@ local function BuildItems(page)
     page.none:SetPoint("TOPRIGHT", 0, -25)
     page.none:SetScript("OnClick", function() Bulk(true) end)
 
-    for _, h in ipairs({ { 0, L.DESK_ITEMS_COL_WATCH }, { 42, L.DESK_ITEMS_COL_ITEM }, { 256, L.DESK_ITEMS_COL_PROF },
-        { 350, L.DESK_ITEMS_COL_QUALITY }, { 434, L.DESK_ITEMS_COL_KEYS } }) do
+    local watchHead = page:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    watchHead:SetPoint("TOPLEFT", 0, -54)
+    watchHead:SetText(L.DESK_ITEMS_COL_WATCH)
+    local titles = { name = L.DESK_ITEMS_COL_ITEM, prof = L.DESK_ITEMS_COL_PROF, reach = L.DESK_ITEMS_COL_QUALITY, keys = L.DESK_ITEMS_COL_KEYS }
+    page.heads = {}
+    for _, c in ipairs(ITEM_COLUMNS) do
         local fs = page:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        fs:SetPoint("TOPLEFT", h[1], -54)
-        fs:SetText(h[2])
+        fs:SetPoint("TOPLEFT", c[2], -54)
+        fs:SetJustifyH("LEFT")
+        fs:SetText(titles[c[1]])
+        page.heads[c[1]] = fs
     end
     local list = CreateFrame("Frame", nil, page)
+    page.list = list
     list:SetPoint("TOPLEFT", 0, -70)
     list:SetPoint("RIGHT", 0, 0)
     list:SetHeight(ITEM_ROWS * ROW)
@@ -715,11 +753,12 @@ local function RefreshItems(page)
     page.searchHint:SetShown(page.search:GetText() == "")
     for f, tab in pairs(page.filters) do tab:SetActive(f == itemFilter) end
     local list = VisibleItems()
-    itemOffset = math.min(itemOffset, math.max(0, #list - ITEM_ROWS))
+    local shown = ItemRows()
+    itemOffset = math.min(itemOffset, math.max(0, #list - shown))
     local pickedItem
     for _, item in ipairs(list) do if item.recipeID == itemPicked then pickedItem = item end end
     for i, row in ipairs(itemRows) do
-        local item = list[itemOffset + i]
+        local item = i <= shown and list[itemOffset + i] or nil
         row.item = item
         row:SetShown(item ~= nil)
         if item then
@@ -893,7 +932,29 @@ local function ApplyScale(scale)
     S().deskScale = scale
 end
 
--- Bottom right grip: drag to make the whole window bigger or smaller.
+-- Lays the pages out for the window's size: wider columns, more rows, and
+-- the boxes under the lists moved down.
+local Layout
+
+-- The window's size within its bounds, kept in settings.deskSize.
+local function SizeBounds()
+    local scale = frame:GetScale()
+    local maxW = math.max(WIDTH, math.min(WIDTH + MAX_EXTRA_W, UIParent:GetWidth() * 0.98 / scale))
+    local maxH = math.max(HEIGHT, math.min(HEIGHT + MAX_EXTRA_H, UIParent:GetHeight() * 0.96 / scale))
+    if frame.SetResizeBounds then frame:SetResizeBounds(WIDTH, HEIGHT, maxW, maxH) end
+    return maxW, maxH
+end
+
+local function ApplySize()
+    local size = S().deskSize
+    local maxW, maxH = SizeBounds()
+    local w = type(size) == "table" and size[1] or WIDTH
+    local h = type(size) == "table" and size[2] or HEIGHT
+    frame:SetSize(math.max(WIDTH, math.min(w, maxW)), math.max(HEIGHT, math.min(h, maxH)))
+end
+
+-- Bottom right grip: drag to make the window bigger or smaller, Shift-drag
+-- to scale the whole window as before.
 local function ScaleGrip()
     local grip = CreateFrame("Button", nil, frame)
     grip:SetSize(16, 16)
@@ -902,6 +963,12 @@ local function ScaleGrip()
     grip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
     grip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
     grip:SetScript("OnMouseDown", function(self)
+        if not IsShiftKeyDown() then
+            SizeBounds()
+            self.sizing = true
+            frame:StartSizing("BOTTOMRIGHT")
+            return
+        end
         local x, y = GetCursorPosition()
         self.start = { x = x, y = y, scale = frame:GetScale() }
         self:SetScript("OnUpdate", function()
@@ -911,7 +978,17 @@ local function ScaleGrip()
             ApplyScale(self.start.scale * (1 + moved / size))
         end)
     end)
-    grip:SetScript("OnMouseUp", function(self) self:SetScript("OnUpdate", nil) end)
+    grip:SetScript("OnMouseUp", function(self)
+        self:SetScript("OnUpdate", nil)
+        if self.sizing then
+            self.sizing = nil
+            frame:StopMovingOrSizing()
+            frame:SetUserPlaced(false)
+            S().deskSize = { math.floor(frame:GetWidth() + 0.5), math.floor(frame:GetHeight() + 0.5) }
+            SavePoint()
+        end
+        SizeBounds()
+    end)
     grip:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:SetText(L.DESK_SCALE_TIP)
@@ -931,6 +1008,8 @@ local function Create()
     frame = Skin.Window("TrustCrafterDeskWindow", WIDTH, HEIGHT)
     frame.title:SetText(L.DESK_TITLE)
     frame:SetScale(FitScale(S().deskScale or SCALE_DEFAULT))
+    frame:SetResizable(true)
+    ApplySize()
     Place()
     frame:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
@@ -966,8 +1045,43 @@ local function Create()
     BuildItems(pages.items)
     BuildMessages(pages.messages)
     BuildSettings(pages.settings)
+    sideFrame = side
+    Layout()
+    frame:HookScript("OnSizeChanged", function()
+        Layout()
+        DeskWindow:Refresh()
+    end)
     frame:HookScript("OnShow", function() DeskWindow:Refresh() end)
     DeskWindow:SetView(ns.Watch:Enabled() and "requests" or "settings")
+end
+
+function Layout()
+    extraW = math.max(0, math.floor(frame:GetWidth() - WIDTH))
+    extraH = math.max(0, math.floor(frame:GetHeight() - HEIGHT))
+
+    local page = pages.requests
+    local cols = Columns(REQUEST_COLUMNS)
+    for key, fs in pairs(page.heads) do PlaceCell(fs, cols[key], -24) end
+    for i = #rows + 1, RequestRows() do rows[i] = CreateRow(page.list, i) end
+    for _, row in ipairs(rows) do
+        for key, col in pairs(cols) do PlaceCell(row[key], col) end
+    end
+    page.list:SetHeight(RequestRows() * ROW)
+
+    page = pages.items
+    cols = Columns(ITEM_COLUMNS)
+    for key, fs in pairs(page.heads) do PlaceCell(fs, cols[key], -54) end
+    for i = #itemRows + 1, ItemRows() do itemRows[i] = CreateItemRow(page.list, i) end
+    for _, row in ipairs(itemRows) do
+        for key, col in pairs(cols) do PlaceCell(row[key], col) end
+    end
+    page.list:SetHeight(ItemRows() * ROW)
+    page.keysLabel:SetPoint("TOPLEFT", 0, -78 - ItemRows() * ROW)
+    page.keys:SetPoint("TOPLEFT", 0, -96 - ItemRows() * ROW)
+    page.keys:SetWidth(PAGE_W + extraW)
+
+    for i = #charRows + 1, CharRows() do charRows[i] = CreateCharRow(sideFrame.list, i) end
+    sideFrame.list:SetHeight(CharRows() * CHAR_ROW)
 end
 
 function DeskWindow:Refresh()
@@ -1004,7 +1118,7 @@ ns.Events:On("TC_SETTINGS_CHANGED", function() DeskWindow:Refresh() end)
 -- Item names arrive after the list first draws.
 local namesPending
 ns.Events:On("GET_ITEM_INFO_RECEIVED", function()
-    if namesPending or not frame or not frame:IsShown() or view ~= "items" then return end
+    if namesPending or not frame or not frame:IsShown() or (view ~= "items" and view ~= "requests") then return end
     namesPending = true
     C_Timer.After(0.5, function()
         namesPending = false

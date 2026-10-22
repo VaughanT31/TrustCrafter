@@ -276,7 +276,13 @@ local FULFILL_OK = (Enum and Enum.CraftingOrderResult and Enum.CraftingOrderResu
 Events:On("CRAFTINGORDERS_CLAIMED_ORDER_UPDATED", function(_, orderID)
     if not orderID then return end
     ReadClaimed(orderID)
-    if ns.db then ns.Crafted:NoteClaim(orderID) end
+    if not ns.db then return end
+    ns.Crafted:NoteClaim(orderID)
+    -- The Crafter Desk marks that customer's request as ordered.
+    local customer = claimed[orderID] and claimed[orderID].customerName
+    if type(customer) == "string" and customer ~= "" and not (issecretvalue and issecretvalue(customer)) then
+        ns.Events:Fire("TC_ORDER_CLAIMED", Util.FullName(customer))
+    end
 end)
 
 Events:On("CRAFTINGORDERS_CLAIM_ORDER_RESPONSE", function(_, result, orderID)

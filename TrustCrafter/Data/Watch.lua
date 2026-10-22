@@ -23,8 +23,10 @@
 -- Kept per realm, newest last, KEEP_DAYS days and at most KEEP requests:
 --   requests = { { id, t, customer, guid, text, channel, recipeID, itemID,
 --                  link, crafter, profession, how, asks, times,
---                  status = "new" | "greeted" | "ordered" | "dismissed",
---                  greetedAt }, ... }
+--                  status = "new" | "greeted" | "ordered" | "delivered" | "dismissed",
+--                  greetedAt, orderedAt, deliveredAt }, ... }
+-- "ordered" is when you take an order from that customer, "delivered" when
+-- you fill it (before 4.1, "ordered" meant filled).
 
 local _, ns = ...
 local L, Util = ns.L, ns.Util
@@ -434,6 +436,15 @@ end
 function Watch:Requests()
     local realm = ns:RealmData()
     realm.requests = realm.requests or {}
+    if not realm.requestsV41 then
+        -- Before 4.1 "ordered" meant the order was filled.
+        for _, r in ipairs(realm.requests) do
+            if r.status == "ordered" and not r.orderedAt then
+                r.status, r.deliveredAt = "delivered", r.lastAt or r.t
+            end
+        end
+        realm.requestsV41 = true
+    end
     return realm.requests
 end
 
@@ -582,17 +593,36 @@ function Watch:Mute(recipeID)
     ns.db.settings.deskMuted[recipeID] = true
 end
 
--- Greeted requests become "ordered" once you fill an order for that
--- customer after greeting them (within a day).
+-- A request becomes "ordered" when you take an order from that customer
+-- (within a day of their ask), and "delivered" once you fill one for them.
+local ORDER_WINDOW = 86400
+
+local function Open(r)
+    return r.status ~= "delivered" and r.status ~= "dismissed"
+end
+
+function Watch:Claimed(customer, now)
+    if not customer then return end
+    now = now or Util.Now()
+    local changed = false
+    for _, r in ipairs(self:Requests()) do
+        if r.customer == customer and Open(r) and r.status ~= "ordered" and now - r.t < ORDER_WINDOW then
+            r.status, r.orderedAt = "ordered", now
+            changed = true
+        end
+    end
+    if changed then ns.Events:Fire("TC_DESK_CHANGED") end
+end
+
 function Watch:CheckOrders()
     local crafted = ns:RealmData().crafted
     local changed = false
     for _, r in ipairs(self:Requests()) do
-        if r.status == "greeted" and r.greetedAt then
+        if Open(r) then
             for _, record in pairs(crafted) do
                 local at = record.completedAt or 0
-                if record.customer == r.customer and at >= r.greetedAt and at - r.greetedAt < 86400 then
-                    r.status = "ordered"
+                if record.customer == r.customer and at >= r.t and at - r.t < ORDER_WINDOW then
+                    r.status, r.deliveredAt = "delivered", at
                     changed = true
                     break
                 end
@@ -602,18 +632,23 @@ function Watch:CheckOrders()
     if changed then ns.Events:Fire("TC_DESK_CHANGED") end
 end
 
--- Today's numbers for the requests page: requests, greeted, ordered.
+-- Today's numbers for the requests page: requests, greeted, ordered,
+-- delivered. Each later step counts for the ones before it too.
+local STEP = { greeted = 1, ordered = 2, delivered = 3 }
+
 function Watch:Today(now)
     now = now or Util.Now()
-    local requests, greeted, ordered = 0, 0, 0
+    local requests, greeted, ordered, delivered = 0, 0, 0, 0
     for _, r in ipairs(self:Requests()) do
         if now - r.t < 86400 then
             requests = requests + 1
-            if r.status == "greeted" or r.status == "ordered" then greeted = greeted + 1 end
-            if r.status == "ordered" then ordered = ordered + 1 end
+            local step = STEP[r.status] or 0
+            if step >= 1 then greeted = greeted + 1 end
+            if step >= 2 then ordered = ordered + 1 end
+            if step >= 3 then delivered = delivered + 1 end
         end
     end
-    return requests, greeted, ordered
+    return requests, greeted, ordered, delivered
 end
 
 -- Chat -----------------------------------------------------------------------
@@ -679,23 +714,38 @@ function Watch:Chat(customer)
     return chats and chats[customer] or {}
 end
 
--- The requests worth showing, newest last: anything from the last
--- SHOW_FOR (counted from their last ask), plus any they whispered you
--- back about or ordered. The rest stay stored for the day's numbers.
+-- The requests worth showing, newest last. A request goes once it has
+-- been idle SHOW_FOR: no new ask, greeting or whisper from them in that
+-- time, or SHOW_FOR after it was delivered. One you've taken an order for
+-- stays until it's delivered (up to a day). The rest stay stored for the
+-- day's numbers.
 local SHOW_FOR = 10 * 60
+
+function Watch:LastActive(request)
+    local last = math.max(request.lastAt or request.t, request.greetedAt or 0)
+    local chat = self:Chat(request.customer)
+    for i = #chat, 1, -1 do
+        local m = chat[i]
+        if m.t < request.t then break end
+        if not m.out then
+            last = math.max(last, m.t)
+            break
+        end
+    end
+    return last
+end
 
 function Watch:Visible(now)
     now = now or Util.Now()
     local visible = {}
     for _, request in ipairs(self:Requests()) do
-        local keep = now - (request.lastAt or request.t) < SHOW_FOR or request.status == "ordered"
-        if not keep then
-            for _, m in ipairs(self:Chat(request.customer)) do
-                if not m.out and m.t >= request.t then
-                    keep = true
-                    break
-                end
-            end
+        local keep
+        if request.status == "delivered" then
+            keep = now - (request.deliveredAt or request.t) < SHOW_FOR
+        elseif request.status == "ordered" then
+            keep = now - (request.orderedAt or request.t) < ORDER_WINDOW
+        else
+            keep = now - self:LastActive(request) < SHOW_FOR
         end
         if keep then visible[#visible + 1] = request end
     end
@@ -734,6 +784,7 @@ ns.Events:On("TC_RECIPES_SCANNED", function(_, character)
 end)
 ns.Events:On("TC_SETTINGS_CHANGED", function() indexDirty = true end)
 ns.Events:On("TC_LEDGER_CHANGED", function() if ns.db then Watch:CheckOrders() end end)
+ns.Events:On("TC_ORDER_CLAIMED", function(_, customer) if ns.db then Watch:Claimed(customer) end end)
 
 -- /tc desk opens the Crafter Desk window.
 ns:RegisterCommand("desk", function()

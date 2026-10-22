@@ -62,10 +62,13 @@ local function ClassName(guid, name)
     return color and ("|c" .. color.colorStr .. short .. "|r") or short
 end
 
+-- The item's link. Until the game has loaded it (GET_ITEM_INFO_RECEIVED
+-- redraws the cards), the link they posted, if any.
 local function ItemText(request)
     if request.itemID then
         local _, link = C_Item.GetItemInfo(request.itemID)
-        return link or C_Item.GetItemNameByID(request.itemID) or ("item " .. request.itemID)
+        if not link and C_Item.RequestLoadItemDataByID then C_Item.RequestLoadItemDataByID(request.itemID) end
+        return link or request.link or C_Item.GetItemNameByID(request.itemID) or ("item " .. request.itemID)
     end
     if request.how == "profession" then return L.DESK_A_PROFESSION:format(request.profession or "?") end
     return L.DESK_SOMETHING
@@ -330,7 +333,7 @@ function DeskAlert:Refresh()
             local lines = DeskAlert.Lines(request)
             card.what:SetText(ns.Presence:Dot(request.guid, request.customer) .. " " .. lines.what
                 .. ((request.times or 1) > 1 and (" " .. GREY .. "x" .. request.times .. "|r") or ""))
-            card.age:SetText(Util.FormatDuration(now - request.t) or "")
+            card.age:SetText(DeskAlert.Age(now - request.t))
             card.text:SetText(Excerpt(request.text))
             card.data:SetText(lines.data)
             card.history:SetText(lines.history .. (lines.demand and ("  |  " .. lines.demand) or ""))
@@ -353,9 +356,35 @@ ns.Events:On("TC_DESK_REQUEST", function(_, request)
 end)
 ns.Events:On("TC_DESK_CHANGED", function() DeskAlert:Refresh() end)
 
--- Ages and expiry tick over while cards are up.
+-- "12 sec" for the first minute, then "1 min", "2 min" ... counted in
+-- whole minutes.
+function DeskAlert.Age(seconds)
+    seconds = math.max(0, math.floor(seconds))
+    if seconds < 60 then return L.DURATION_SEC:format(seconds) end
+    return Util.FormatDuration(seconds - seconds % 60) or ""
+end
+
+-- Ages tick every second while cards are up; expiry every 15.
+C_Timer.NewTicker(1, function()
+    if #shown == 0 or not cards or not ns.db then return end
+    local now = Util.Now()
+    for _, card in ipairs(cards) do
+        if card:IsShown() and card.request then card.age:SetText(DeskAlert.Age(now - card.request.t)) end
+    end
+end)
 C_Timer.NewTicker(15, function()
     if #shown > 0 then DeskAlert:Refresh() end
+end)
+
+-- Item names arrive after the cards first draw.
+local namesPending
+ns.Events:On("GET_ITEM_INFO_RECEIVED", function()
+    if namesPending or #shown == 0 then return end
+    namesPending = true
+    C_Timer.After(0.5, function()
+        namesPending = false
+        DeskAlert:Refresh()
+    end)
 end)
 ns.Events:On("TC_SETTINGS_CHANGED", function() DeskAlert:Refresh() end)
 ns.Events:On("TC_DB_READY", function() DeskAlert:Refresh() end)
