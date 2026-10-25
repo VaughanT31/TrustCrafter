@@ -76,6 +76,10 @@ local DEFAULTS = {
         deskBarPinned = false,
         deskAutoKeys = true,
         deskButton = "minimap",
+        -- Put every window away in combat and in dungeons, raids, delves and
+        -- PvP (UI/Skin.lua).
+        hideInCombat = true,
+        hideInInstances = true,
         debug = false,
         minimapHide = false,
         minimapAngle = 220,

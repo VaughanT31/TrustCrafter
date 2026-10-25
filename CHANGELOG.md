@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.2.0
+
+- **Hides in combat and instances:** every Trust Crafter window, the alert cards and the desk button step aside when combat starts and in dungeons, raids, delves, battlegrounds and arenas, then come back exactly as they were. Requests that arrive meanwhile wait as cards, without the alert sound. Escape in combat goes to the game, not to a hidden window. Turn either off under **Windows** in the options.
+
 ## 4.1.0
 
 - **A bigger Crafter Desk:** drag the bottom right corner to make the window bigger. The columns get wider and the lists show more rows, and it remembers the size. Shift-drag still scales the whole window.

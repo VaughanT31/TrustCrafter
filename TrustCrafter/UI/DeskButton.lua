@@ -80,7 +80,7 @@ local function Tooltip(self)
 end
 
 local function Create()
-    button = CreateFrame("Button", "TrustCrafterDeskButton", UIParent, "BackdropTemplate")
+    button = CreateFrame("Button", "TrustCrafterDeskButton", ns.Skin.Holder, "BackdropTemplate")
     button:SetSize(SIZE, SIZE)
     button:SetFrameStrata("MEDIUM")
     button:SetClampedToScreen(true)

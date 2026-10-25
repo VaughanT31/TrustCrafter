@@ -11,6 +11,50 @@ ns.Skin = Skin
 
 local WHITE = "Interface\\Buttons\\WHITE8x8"
 
+-- Every window, the alert cards and the desk button sit in one holder, so
+-- hiding it in combat or an instance puts them all away, and showing it
+-- again brings back exactly the ones that were open.
+local holder = CreateFrame("Frame", "TrustCrafterHolder", UIParent)
+holder:SetAllPoints(UIParent)
+Skin.Holder = holder
+
+-- Instance types the windows hide in. Housing (neighborhood, interior) and
+-- the open world aren't.
+local HIDE_IN = { party = true, raid = true, pvp = true, arena = true, scenario = true }
+local special = {}        -- names Skin.Window put on UISpecialFrames
+local inCombat = InCombatLockdown()
+
+-- True while the windows are put away.
+function Skin.Hidden()
+    return not holder:IsShown()
+end
+
+-- Escape only closes windows you can see: put away, they come off the list,
+-- so Escape in combat still reaches the game and doesn't close them.
+local function SetSpecial(on)
+    for _, name in ipairs(special) do
+        tDeleteItem(UISpecialFrames, name)
+        if on then table.insert(UISpecialFrames, name) end
+    end
+end
+
+function Skin.UpdateHidden()
+    local s = ns.db and ns.db.settings or {}
+    local _, kind = IsInInstance()
+    local hide = (inCombat and s.hideInCombat ~= false)
+        or (HIDE_IN[kind] and s.hideInInstances ~= false) or false
+    if hide == Skin.Hidden() then return end
+    holder:SetShown(not hide)
+    SetSpecial(not hide)
+end
+
+ns.Events:On("PLAYER_REGEN_DISABLED", function() inCombat = true; Skin.UpdateHidden() end)
+ns.Events:On("PLAYER_REGEN_ENABLED", function() inCombat = false; Skin.UpdateHidden() end)
+ns.Events:On("PLAYER_ENTERING_WORLD", Skin.UpdateHidden)
+ns.Events:On("ZONE_CHANGED_NEW_AREA", Skin.UpdateHidden)
+ns.Events:On("TC_DB_READY", Skin.UpdateHidden)
+ns.Events:On("TC_SETTINGS_CHANGED", Skin.UpdateHidden)
+
 Skin.BG = { 0.043, 0.047, 0.063, 0.97 }
 Skin.BORDER = { 0.25, 0.27, 0.33, 0.7 }
 Skin.GOLD = { 1, 0.82, 0.15 }
@@ -36,7 +80,7 @@ end
 -- A movable window with a title and a close button, closed by Escape.
 -- name must be a unique global frame name.
 function Skin.Window(name, width, height, strata)
-    local frame = CreateFrame("Frame", name, UIParent, "BackdropTemplate")
+    local frame = CreateFrame("Frame", name, holder, "BackdropTemplate")
     frame:SetSize(width, height)
     frame:SetFrameStrata(strata or "HIGH")
     frame:SetToplevel(true)
@@ -52,7 +96,8 @@ function Skin.Window(name, width, height, strata)
         self:Raise()
         Skin.Backdrop(self)
     end)
-    table.insert(UISpecialFrames, name)
+    special[#special + 1] = name
+    if not Skin.Hidden() then table.insert(UISpecialFrames, name) end
 
     frame.title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     frame.title:SetPoint("TOPLEFT", 16, -14)

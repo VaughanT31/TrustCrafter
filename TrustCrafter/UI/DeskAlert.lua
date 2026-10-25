@@ -240,7 +240,7 @@ local function CreateCard(index)
 end
 
 local function Create()
-    anchor = CreateFrame("Frame", "TrustCrafterDeskAlerts", UIParent, "BackdropTemplate")
+    anchor = CreateFrame("Frame", "TrustCrafterDeskAlerts", Skin.Holder, "BackdropTemplate")
     anchor:SetSize(WIDTH, 22)
     anchor:SetFrameStrata("HIGH")
     anchor:SetClampedToScreen(true)
@@ -348,7 +348,8 @@ end
 
 ns.Events:On("TC_DESK_REQUEST", function(_, request)
     table.insert(shown, 1, request)
-    if ns.db.settings.deskSound ~= false and not InCombatLockdown() then
+    -- Silent while the windows are put away: the card waits until they're back.
+    if ns.db.settings.deskSound ~= false and not InCombatLockdown() and not Skin.Hidden() then
         DeskAlert.PlayAlert(ns.db.settings.deskSoundName)
         if FlashClientIcon then FlashClientIcon() end
     end

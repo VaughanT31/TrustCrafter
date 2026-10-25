@@ -130,6 +130,10 @@ local function Build()
     Dropdown("deskSoundName", L.OPT_DESK_SOUND_NAME, L.OPT_DESK_SOUND_NAME_TIP, "whisper", sounds,
         function(value) ns.DeskAlert.PlayAlert(value) end)
 
+    Header(L.OPT_WINDOWS)
+    Checkbox("hideInCombat", L.OPT_HIDE_COMBAT, L.OPT_HIDE_COMBAT_TIP, true)
+    Checkbox("hideInInstances", L.OPT_HIDE_INSTANCES, L.OPT_HIDE_INSTANCES_TIP, true)
+
     Header(L.OPT_DATA)
     Button(L.OPT_EXPORT, L.EXPORT_BUTTON, function() ns.ExportWindow:Show() end, L.OPT_EXPORT_TIP)
     Button(L.OPT_WIPE, L.OPT_WIPE_BUTTON, function()
