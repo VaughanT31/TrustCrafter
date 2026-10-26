@@ -2,6 +2,8 @@
 
 A World of Warcraft addon that remembers who crafted your orders, what quality you asked for and what you actually got.
 
+**New here?** The [wiki](wiki/Home.md) explains every feature step by step (also on the [website](https://ctrlshiftzed.com/wiki/trustcrafter/)). Questions it doesn't answer: ask on [Discord](https://discord.gg/wz7fw6jM9Z).
+
 Crafting orders are full of crafters you know nothing about. TrustCrafter keeps a private ledger of every order you place, so the next time you see a crafter you can tell at a glance whether they have done good work for you before.
 
 - **Game:** Retail, Midnight (12.x)
