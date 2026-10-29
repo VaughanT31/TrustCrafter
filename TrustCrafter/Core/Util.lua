@@ -20,6 +20,17 @@ function Util.Realm()
     return GetNormalizedRealmName() or ""
 end
 
+-- Whether a "Name-Realm" is on your realm or one connected to it: the only
+-- characters a personal order can be sent to.
+function Util.SameRealmGroup(name)
+    local realm = name and name:match("%-(.+)$") or Util.Realm()
+    if realm == Util.Realm() then return true end
+    for _, connected in ipairs(GetAutoCompleteRealms and GetAutoCompleteRealms() or {}) do
+        if connected == realm then return true end
+    end
+    return false
+end
+
 -- "Name-Realm" for any name, adding the player's realm when it is left off.
 -- Crafters and reviewers are always stored this way, because the game
 -- sometimes gives a name with its realm and sometimes without.

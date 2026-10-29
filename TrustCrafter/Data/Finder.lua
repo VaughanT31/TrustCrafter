@@ -284,19 +284,25 @@ end
 -- The current search as rows, best first:
 -- { { name, via, skill, max, online, busy, note, mine, rank }, ... }
 -- Your own characters that know the recipe are included as "mine".
+-- Only crafters a personal order can reach: your realm and the realms
+-- connected to it. Anyone else gives "character not found" when you send.
 function Finder:Rows()
     if not current then return {} end
     local rows = {}
     for sender, result in pairs(current.results) do
         for _, c in ipairs(result.chars) do
-            rows[#rows + 1] = {
-                name = c.name, via = not c.online and sender or nil, skill = c.skill, max = c.max,
-                online = c.online, busy = result.busy, note = result.note,
-            }
+            if Util.SameRealmGroup(c.name) then
+                rows[#rows + 1] = {
+                    name = c.name, via = not c.online and sender or nil, skill = c.skill, max = c.max,
+                    online = c.online, busy = result.busy, note = result.note,
+                }
+            end
         end
     end
     for _, c in ipairs(self:MyCrafters(current.recipeID, true)) do
-        rows[#rows + 1] = { name = c.name, skill = c.skill, max = c.max, online = c.me, mine = true }
+        if Util.SameRealmGroup(c.name) then
+            rows[#rows + 1] = { name = c.name, skill = c.skill, max = c.max, online = c.me, mine = true }
+        end
     end
     for _, row in ipairs(rows) do row.rank = Finder.Trust(row.name) end
     table.sort(rows, function(a, b)

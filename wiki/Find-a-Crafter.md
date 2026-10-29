@@ -6,6 +6,8 @@ Turn on **Find a Crafter** in the options, or click the **Find a Crafter** butto
 
 The button asks your guild and realm who knows the recipe. Crafters with Find a Crafter on answer with which of their characters know it.
 
+Only crafters your order can reach are listed: characters on your realm or a realm connected to it. Guildmates on other realms are left out, since a personal order can't be sent to them.
+
 ### Results
 
 Sorted by trust: your own good orders first, then good guild reviews, then good realm reviews, then crafters who are online and not busy. Your own characters come last.

@@ -2,7 +2,7 @@
 ## Title: TrustCrafter
 ## Notes: Remembers who crafted your orders, what you asked for and what you got.
 ## Author: CtrlShift_Zed
-## Version: 4.2.0
+## Version: 4.2.1
 ## Category: CtrlShift_Zed
 ## SavedVariables: TrustCrafterDB
 ## OptionalDeps: CraftScan, AuctionCoach
